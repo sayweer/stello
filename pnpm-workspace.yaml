@@ -1,0 +1,6 @@
+packages:
+  - packages/*
+  - web
+allowBuilds:
+  # tsx needs esbuild's platform binary.
+  esbuild: true
