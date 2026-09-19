@@ -1,0 +1,27 @@
+# Rust / Soroban
+/target/
+
+# Node
+node_modules/
+.next/
+.pnpm-store/
+
+# Stellar CLI identities (project-local; contains secret keys)
+.stellar-cfg/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Agent / tooling directories (not part of the project)
+.claude/
+.codex/
+.stellar-build/
+
+# Working notes and research artifacts
+PLAN.md
+.pool-v2-result.json
+
+# macOS
+.DS_Store
