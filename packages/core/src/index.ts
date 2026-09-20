@@ -6,3 +6,4 @@ export * from "./account.ts";
 export * from "./anchor.ts";
 export * from "./contracts.ts";
 export * from "./relay.ts";
+export * from "./flows.ts";

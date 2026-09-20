@@ -8,8 +8,8 @@
   "scripts": {
     "typecheck": "tsc --noEmit -p packages/core/tsconfig.json",
     "test": "node --import tsx --test packages/core/src/*.test.ts",
-    "relayer": "node --import tsx scripts/relayer.ts",
-    "e2e": "node --import tsx scripts/e2e.ts"
+    "relayer": "node --env-file-if-exists=.env --import tsx scripts/relayer.ts",
+    "e2e": "node --env-file-if-exists=.env --import tsx scripts/e2e.ts"
   },
   "dependencies": {
     "@stellar/stellar-sdk": "^17.1.0",

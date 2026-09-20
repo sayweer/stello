@@ -53,13 +53,18 @@ const settled = new Set<string>();
 const failures = new Map<string, number>();
 const MAX_FAILURES = 3;
 
-interface Candidate {
+export interface Candidate {
   operationId: string;
   ticket: bigint;
   amount: bigint;
 }
 
-function collect(records: any[], source: string): Candidate[] {
+/**
+ * Picks the payments this relay is responsible for. Exported because this
+ * filter is the whole security boundary of the relay: anything that slips
+ * through here would be dispatched as if the anchor had sent it.
+ */
+export function collect(records: any[], source: string): Candidate[] {
   return records
     .filter(
       (record) =>
