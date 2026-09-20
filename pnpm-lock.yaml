@@ -7,6 +7,13 @@ settings:
 importers:
 
   .:
+    dependencies:
+      '@stellar/stellar-sdk':
+        specifier: ^17.1.0
+        version: 17.1.0(debug@4.4.3)
+      '@stello/core':
+        specifier: workspace:*
+        version: link:packages/core
     devDependencies:
       '@types/node':
         specifier: ^24.0.0

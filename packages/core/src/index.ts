@@ -2,3 +2,7 @@ export * from "./amounts.ts";
 export * from "./codec.ts";
 export * from "./config.ts";
 export * from "./muxed.ts";
+export * from "./account.ts";
+export * from "./anchor.ts";
+export * from "./contracts.ts";
+export * from "./relay.ts";
