@@ -1,0 +1,373 @@
+/* ============================================================================
+   Stello — app shell
+   Sidebar on a desktop, bottom tabs on a phone, a sticky top bar carrying the
+   account. Pages render inside. Same paper palette as the landing so crossing
+   over does not feel like landing in a different product.
+   ========================================================================== */
+
+.shell {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: 248px 1fr;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.shell__side {
+  border-right: 1px solid var(--line);
+  padding: 26px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+}
+
+.shell__brand {
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 22px;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  color: var(--ink);
+  text-align: left;
+}
+
+.shell__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.shell__item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 11px 13px;
+  border-radius: 11px;
+  border: 0;
+  background: none;
+  color: var(--ink-2);
+  font-family: inherit;
+  font-size: 15px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.shell__item:hover {
+  background: var(--surface);
+  color: var(--ink);
+}
+.shell__item.is-active {
+  background: var(--accent-soft);
+  color: var(--ink);
+  font-weight: 600;
+}
+.shell__icon {
+  font-family: var(--font-mono), monospace;
+  font-size: 13px;
+  opacity: 0.8;
+}
+
+.shell__foot {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+.shell__testnet {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  line-height: 1.45;
+}
+
+.shell__main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.shell__top {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 16px 26px;
+  background: color-mix(in oklab, var(--paper) 88%, transparent);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+
+.shell__who {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-family: var(--font-mono), monospace;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+.shell__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--ok);
+}
+
+.shell__content {
+  padding: 32px 26px 96px;
+  max-width: var(--shell-w);
+  width: 100%;
+  margin: 0 auto;
+}
+
+.shell__tabs {
+  display: none;
+}
+
+@media (max-width: 860px) {
+  .shell {
+    grid-template-columns: 1fr;
+  }
+  .shell__side {
+    display: none;
+  }
+  .shell__content {
+    padding: 22px 18px 96px;
+  }
+  .shell__tabs {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10;
+    display: grid;
+    grid-auto-flow: column;
+    background: color-mix(in oklab, var(--paper) 94%, transparent);
+    backdrop-filter: blur(12px);
+    border-top: 1px solid var(--line);
+    padding: 8px 6px calc(8px + env(safe-area-inset-bottom));
+  }
+  .shell__tab {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 8px 4px;
+    border: 0;
+    background: none;
+    font-family: inherit;
+    font-size: 11.5px;
+    color: var(--ink-2);
+    cursor: pointer;
+  }
+  .shell__tab.is-active {
+    color: var(--accent);
+    font-weight: 600;
+  }
+}
+
+/* ---- page furniture -------------------------------------------------------- */
+
+.page__head {
+  margin-bottom: 26px;
+}
+.page__title {
+  font-family: var(--font-display), Georgia, serif;
+  font-weight: 400;
+  font-size: clamp(28px, 4vw, 40px);
+  line-height: 1.1;
+  margin: 6px 0 0;
+}
+.page__lede {
+  color: var(--ink-2);
+  font-size: 15.5px;
+  margin: 10px 0 0;
+  max-width: 62ch;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.ccard {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+  cursor: pointer;
+  font-family: inherit;
+  color: inherit;
+  transition: transform 0.16s ease, border-color 0.16s ease;
+}
+.ccard:hover {
+  transform: translateY(-2px);
+  border-color: var(--accent);
+}
+.ccard__title {
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 21px;
+  line-height: 1.18;
+  margin: 0 0 4px;
+}
+.ccard__meta {
+  font-size: 13px;
+  color: var(--ink-2);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+
+.bar {
+  height: 8px;
+  border-radius: 99px;
+  background: color-mix(in oklab, var(--ink) 10%, transparent);
+  overflow: hidden;
+  margin: 16px 0 10px;
+}
+.bar span {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: var(--accent);
+  transition: width 0.5s cubic-bezier(0.2, 0.7, 0.3, 1);
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border-radius: 99px;
+  font-size: 11.5px;
+  font-family: var(--font-mono), monospace;
+  border: 1px solid var(--line);
+  color: var(--ink-2);
+}
+.tag--live {
+  border-color: var(--ok);
+  color: var(--ok);
+}
+.tag--failed {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.empty {
+  padding: 56px 24px;
+  text-align: center;
+  color: var(--ink-2);
+  border: 1px dashed var(--line);
+  border-radius: 16px;
+}
+
+/* ---- preparing overlay ------------------------------------------------------ */
+
+/* The account setup a participant never asked for: funded, trustlined, known to
+   the anchor. Shown as named steps rather than a spinner, because the whole
+   claim of the product is that nothing is hidden. */
+.prep {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: color-mix(in oklab, var(--paper) 88%, transparent);
+  backdrop-filter: blur(8px);
+}
+.prep__box {
+  width: min(420px, 100%);
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--surface);
+}
+.prep__title {
+  font-family: var(--font-display), Georgia, serif;
+  font-size: 24px;
+  margin: 0 0 6px;
+}
+.prep__lede {
+  color: var(--ink-2);
+  font-size: 14.5px;
+  margin: 0 0 20px;
+}
+.prep__steps {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.prep__step {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 9px 0;
+  font-size: 14.5px;
+  color: var(--ink-2);
+  border-bottom: 1px solid var(--line);
+}
+.prep__step:last-child {
+  border-bottom: 0;
+}
+.prep__step.is-active {
+  color: var(--ink);
+  font-weight: 600;
+}
+.prep__step.is-done {
+  color: var(--ink);
+}
+.prep__mark {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  flex: none;
+}
+.prep__step.is-done .prep__mark {
+  background: var(--ok);
+  border-color: var(--ok);
+  color: var(--paper);
+}
+.prep__step.is-active .prep__mark {
+  border-color: var(--accent);
+  animation: prep-pulse 1.4s ease-in-out infinite;
+}
+@keyframes prep-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--accent) 55%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 7px transparent;
+  }
+}
+.prep__note {
+  margin-top: 18px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  line-height: 1.5;
+}
+.prep__error {
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--red);
+  color: var(--red);
+  font-size: 13.5px;
+}

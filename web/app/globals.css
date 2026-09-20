@@ -1,0 +1,87 @@
+/* ============================================================================
+   Stello — design tokens
+   A receipt, not a dashboard: warm paper, ink-blue type, one warm accent for
+   the thing that moves (money). Identity lives in tokens, so a palette change
+   is a few lines rather than a sweep.
+
+   Contrast rule carried over from the reference: --accent is FILL ONLY. On
+   paper it reads ~3:1, fine behind large type but never for body text; text on
+   top of it is always --ink.
+   ========================================================================== */
+
+:root {
+  --paper: #faf6ee;
+  --surface: #f3ece0;
+  --ink: #17233d;
+  --ink-2: #5d6884;
+  --accent: #ff6a3d;
+  --accent-soft: #ffd9cb;
+  --ok: #1f7a55;
+  --red: #b3261e;
+  --line: rgba(23, 35, 61, 0.14);
+  --shell-w: 1320px;
+
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --paper: #0f1729;
+  --surface: #17233d;
+  --ink: #f2ede3;
+  --ink-2: #9aa5bd;
+  --accent: #ff7b52;
+  --accent-soft: rgba(255, 123, 82, 0.22);
+  --line: rgba(242, 237, 227, 0.16);
+
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body), system-ui, -apple-system, sans-serif;
+  font-size: 16px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: var(--accent);
+  color: var(--paper);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font-family: inherit;
+}
+
+/* A phone zooms the page in whenever it focuses a field under 16px, and never
+   zooms back out — the layout stays broken for the rest of the session. */
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: 16px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
