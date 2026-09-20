@@ -11,14 +11,27 @@ They send an ordinary bank transfer; your contract is called with the money alre
 [![license](https://img.shields.io/badge/license-MIT-black)](LICENSE)
 [![network](https://img.shields.io/badge/network-Stellar%20testnet-black)](https://stellar.expert/explorer/testnet/contract/CAG2IZHZK6VLNW3ASXENFLCL6SN6KS72JMLNF4GO2ZIFV5WURN2BYFZV)
 
-[**Documentation**](https://stello-web-rho.vercel.app/en) ·
-[**Live example**](https://stello-core-et2a.vercel.app) ·
-[**For coding agents**](https://stello-web-rho.vercel.app/llms-full.txt) ·
-[**Türkçe**](https://stello-web-rho.vercel.app/tr)
+### → [stello-web-rho.vercel.app](https://stello-web-rho.vercel.app/en)
+
+[Documentation](https://stello-web-rho.vercel.app/en/docs) ·
+[For coding agents](https://stello-web-rho.vercel.app/llms-full.txt) ·
+[npm](https://www.npmjs.com/package/stello-sdk) ·
+[Türkçe](https://stello-web-rho.vercel.app/tr)
 
 </div>
 
 ---
+
+## Two links, and they are not the same thing
+
+|  |  |
+| --- | --- |
+| **Stello** — the layer itself: the SDK, the router contract and the developer documentation. This repository. | **[stello-web-rho.vercel.app](https://stello-web-rho.vercel.app/en)** |
+| **Stello Campaign** — *an application someone built with Stello.* Its own repository, its own contract, installing `stello-sdk` from npm like anyone else would. A demonstration of the layer, not part of it. | [stello-core-et2a.vercel.app](https://stello-core-et2a.vercel.app) |
+
+If you are here to integrate Stello, the first link is the one you want. The second is there
+to show that a completely separate project can consume this as a package — which is the
+difference between a layer and an application.
 
 ## The problem
 
@@ -50,7 +63,7 @@ Stello removes all three. Your user stays in the banking app they already have.
 4. **The router dispatches.** It moves the USDC to your contract and calls `on_deposit` in the
    **same transaction** — so the money and the call either both happen or neither does.
 
-[muxed]: https://developers.stellar.org/docs/learn/encyclopedia/transactions-specialized/muxed-accounts
+[muxed]: https://github.com/stellar/stellar-protocol/blob/master/ecosystem/sep-0023.md
 
 ## The whole integration
 
@@ -134,10 +147,10 @@ scripts                    deploy, relay loop, end-to-end runs
 deployments                the single source of truth for addresses
 ```
 
-The example application — [**Stello Campaign**](https://github.com/sayweer/stello-kampanya),
-a dominant-assurance campaign that refunds its backers with a share of the bonus when the
-goal is missed — lives in its own repository and installs `stello-sdk` from npm like anyone
-else would. That separation is the proof that this is a layer rather than one application.
+The example application lives in [**sayweer/stello-kampanya**](https://github.com/sayweer/stello-kampanya):
+a dominant-assurance campaign that returns every backer's pledge, plus a share of the bonus,
+when the goal is missed. The SDK, the router and the contracts know nothing about it; only
+the documentation links to it.
 
 ## Development
 
