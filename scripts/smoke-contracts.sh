@@ -4,7 +4,8 @@
 # calling on_deposit inside one auth tree — and that the guards hold.
 #
 # The router is token-agnostic, so this runs on native XLM with a throwaway
-# pair of contracts. No anchor, no Node, just the CLI.
+# pair of contracts — no anchor involved. Steps 1-5 are pure CLI; step 6 reads
+# the dispatch back through the SDK, the way an integrating app would.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -93,6 +94,11 @@ FINAL=$(call --id "$XLM_SAC" --source-account deployer --send=no -- balance --id
 echo "payout=$PAYOUT  balance $AFTER -> $FINAL"
 [ "$PAYOUT" -eq $((5 * XLM)) ] || { echo "FAIL: unexpected payout"; exit 1; }
 [ "$FINAL" -eq $((AFTER + 5 * XLM)) ] || { echo "FAIL: the refund did not reach the user"; exit 1; }
+
+say "6) an integrating app reads the dispatch back off the chain"
+node --import tsx scripts/check-dispatch.ts "$ROUTER" "$TICKET" $((5 * XLM)) || {
+  echo "FAIL: the SDK could not read the dispatch"; exit 1;
+}
 
 say "ALL CHECKS PASSED"
 echo "router  : https://stellar.expert/explorer/testnet/contract/$ROUTER"

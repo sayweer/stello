@@ -123,8 +123,10 @@ export async function openTicket(
   user: Keypair,
   route: number,
   arg: Buffer,
+  /** Router deployment; defaults to the one in deployments/testnet.json. */
+  routerId: string = config.routerId,
 ): Promise<bigint> {
-  return send<bigint>(router(user), "open_ticket", {
+  return send<bigint>(client(routerId, user), "open_ticket", {
     user: user.publicKey(),
     route,
     arg,

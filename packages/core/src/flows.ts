@@ -1,23 +1,7 @@
 import type { Keypair } from "@stellar/stellar-sdk";
 
-import { fromStroops, toStroops } from "./amounts.ts";
-import {
-  accountExists,
-  addTrustline,
-  fundWithFriendbot,
-  hasTrustline,
-  payClassic,
-  usdcBalance,
-} from "./account.ts";
-import {
-  deposit,
-  login,
-  price,
-  putCustomer,
-  simulateBankTransfer,
-  waitFor,
-  withdraw,
-} from "./anchor.ts";
+import { toStroops } from "./amounts.ts";
+import { price } from "./anchor.ts";
 import { encodeArg, KIND_BONUS, KIND_PLEDGE } from "./codec.ts";
 import { config } from "./config.ts";
 import {
@@ -25,81 +9,31 @@ import {
   claim,
   getCampaign,
   getPledge,
-  openTicket,
   pledgerAt,
   quoteClaim,
-  Status,
   withdrawProceeds,
   type Campaign,
+  type Status,
 } from "./contracts.ts";
-import { ticketAddress } from "./muxed.ts";
+import { Stello, type DepositHandle, type OnStep } from "./stello.ts";
 
 /**
- * The whole product, as functions a user interface can call.
+ * Stello's own campaign app — written on exactly the client any other Soroban
+ * app would use, with nothing privileged about it.
  *
- * Nothing here touches React or the DOM, and nothing above here touches
- * stellar-sdk: the UI decides how a step looks, these functions decide what a
- * step means. Every flow re-checks state before acting, so an interrupted one
- * can simply be called again.
+ * What lives here is only what is specific to "Ya olur ya kazanırsın": what the
+ * argument bytes mean, when a pledge is claimable, how a bonus is funded. The
+ * bank-transfer machinery underneath is in `stello.ts` and knows none of it.
  */
+const stello = new Stello({ route: config.routeId });
 
-export type StepName =
-  | "account"
-  | "trustline"
-  | "signin"
-  | "customer"
-  | "ticket"
-  | "deposit"
-  | "waiting-transfer"
-  | "waiting-chain"
-  | "settled"
-  | "claimed"
-  | "withdrawing"
-  | "paid-out";
+export type { DepositHandle as JoinHandle, OnStep, StepName } from "./stello.ts";
 
-export type OnStep = (step: StepName, detail?: string) => void;
-
-/** Fee the organizer pays on top of the bonus, in stroops. */
-const MIN_WITHDRAW = 10_000_000n; // the anchor refuses less than 1 USDC
-
-export interface JoinHandle {
-  ticket: bigint;
-  depositId: string;
-  /** Where the participant sends the money. */
-  iban?: string;
-  reference?: string;
-  estimatedUsdc?: string;
-  token: string;
-}
-
-/**
- * Gets a browser-generated key to the point where it can send and receive:
- * funded, trustlined and known to the anchor. Each step is skipped if it is
- * already done, so this is cheap to call on every page load.
- */
 export async function ensureReady(keypair: Keypair, onStep?: OnStep): Promise<string> {
-  const account = keypair.publicKey();
-
-  if (!(await accountExists(account))) {
-    onStep?.("account");
-    await fundWithFriendbot(account);
-  }
-  if (!(await hasTrustline(account))) {
-    onStep?.("trustline");
-    await addTrustline(keypair);
-  }
-
-  onStep?.("signin");
-  const token = await login(keypair);
-  onStep?.("customer");
-  await putCustomer(token, account);
-  return token;
+  return stello.ensureReady(keypair, onStep);
 }
 
-/**
- * Opens a ticket and asks the anchor for payment instructions. What comes back
- * is what the participant sees: an IBAN and a reference code.
- */
+/** A pledge or a bonus, depending on `kind` — both are just deposits. */
 export async function startJoin({
   keypair,
   campaignId,
@@ -112,40 +46,26 @@ export async function startJoin({
   amountTry: string;
   kind?: typeof KIND_PLEDGE | typeof KIND_BONUS;
   onStep?: OnStep;
-}): Promise<JoinHandle> {
-  const token = await ensureReady(keypair, onStep);
-
-  onStep?.("ticket");
-  const ticket = await openTicket(keypair, config.routeId, encodeArg(kind, campaignId));
-
-  onStep?.("deposit");
-  const instructions = await deposit(token, {
-    account: ticketAddress(config.landing, ticket),
+}): Promise<DepositHandle> {
+  return stello.requestDeposit({
+    keypair,
+    arg: encodeArg(kind, campaignId),
     amountTry,
+    onStep,
   });
-  const quote = await price(amountTry).catch(() => null);
-
-  return {
-    ticket,
-    depositId: instructions.id,
-    iban: instructions.iban,
-    reference: instructions.reference,
-    estimatedUsdc: quote?.usdc,
-    token,
-  };
 }
 
 /** Demo only: stands in for the participant's banking app. */
-export async function confirmDemoTransfer(handle: JoinHandle, amountTry: string): Promise<void> {
-  await simulateBankTransfer(handle.depositId, amountTry);
+export async function confirmDemoTransfer(
+  handle: DepositHandle,
+  amountTry: string,
+): Promise<void> {
+  await stello.simulateBankTransfer(handle, amountTry);
 }
 
 /**
- * Waits for the bank transfer to become an on-chain pledge: the anchor settles,
- * the relay dispatches, the campaign records it.
- *
- * `triggerRelay` is how the caller nudges the relay — calling `relayOnce`
- * directly in Node, or POSTing to /api/relay in the browser.
+ * Waits for the transfer to become a pledge. The router's event says the money
+ * reached the contract; the campaign's own state says what it made of it.
  */
 export async function waitForDeposit({
   keypair,
@@ -157,30 +77,21 @@ export async function waitForDeposit({
 }: {
   keypair: Keypair;
   campaignId: bigint;
-  handle: JoinHandle;
+  handle: DepositHandle;
   triggerRelay?: () => Promise<unknown>;
   onStep?: OnStep;
   timeoutMs?: number;
-}): Promise<{ pledged: bigint; delivered: string | undefined }> {
-  onStep?.("waiting-transfer");
-  const settledTx = await waitFor(handle.token, handle.depositId, ["completed"], {
-    timeoutMs,
-    onUpdate: (tx) => onStep?.("waiting-transfer", tx.status),
-  });
+}): Promise<{ pledged: bigint; delivered: bigint; accepted: boolean }> {
+  const dispatched = await stello.waitForDeposit({ handle, triggerRelay, onStep, timeoutMs });
+  const pledge = await getPledge(campaignId, keypair.publicKey());
 
-  onStep?.("waiting-chain");
-  const before = (await getPledge(campaignId, keypair.publicKey()))?.amount ?? 0n;
-  const deadline = Date.now() + timeoutMs;
-
-  while (Date.now() < deadline) {
-    await triggerRelay?.();
-    const pledge = await getPledge(campaignId, keypair.publicKey());
-    if (pledge && pledge.amount > before) {
-      return { pledged: pledge.amount, delivered: settledTx.amount_out };
-    }
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-  }
-  throw new Error("the transfer arrived but never became a pledge");
+  return {
+    pledged: pledge?.amount ?? 0n,
+    delivered: dispatched.amount,
+    // False means the campaign refused it and refunded in the same transaction
+    // — closed, not live yet, or a payload it could not read.
+    accepted: dispatched.accepted,
+  };
 }
 
 /** Organizer flow: lock the bonus that makes the promise credible. */
@@ -196,7 +107,7 @@ export async function fundBonus({
   triggerRelay?: () => Promise<unknown>;
 }): Promise<Campaign> {
   const campaign = await getCampaign(campaignId);
-  if (!campaign) throw new Error(`campaign ${campaignId} does not exist`);
+  if (!campaign) throw new Error(`kampanya ${campaignId} yok`);
 
   const missing = campaign.bonus - campaign.bonus_funded;
   if (missing <= 0n) return campaign;
@@ -207,23 +118,16 @@ export async function fundBonus({
   const perTry = quote ? Number(toStroops(quote.usdc)) / 100 : 0;
   const amountTry = perTry > 0 ? Math.ceil((Number(missing) / perTry) * 1.01).toString() : "100";
 
-  const handle = await startJoin({
-    keypair,
-    campaignId,
-    amountTry,
-    kind: KIND_BONUS,
-    onStep,
-  });
+  const handle = await startJoin({ keypair, campaignId, amountTry, kind: KIND_BONUS, onStep });
   await confirmDemoTransfer(handle, amountTry);
   await waitForDeposit({ keypair, campaignId, handle, triggerRelay, onStep });
 
-  const updated = await getCampaign(campaignId);
-  return updated!;
+  return (await getCampaign(campaignId))!;
 }
 
 /**
- * The refund path end to end: settle if needed, claim (no signature required),
- * then cash out to the participant's IBAN.
+ * The refund path end to end: claim if it has not been claimed yet, then cash
+ * out. The claim is campaign business; the cash-out is the shared client.
  */
 export async function claimAndWithdraw({
   keypair,
@@ -241,31 +145,10 @@ export async function claimAndWithdraw({
     onStep?.("claimed");
     await claim(keypair, campaignId, account);
   }
-
-  const balance = await usdcBalance(account);
-  if (balance < MIN_WITHDRAW) {
-    throw new Error(
-      `the anchor will not cash out less than 1 USDC (balance ${fromStroops(balance)})`,
-    );
-  }
-
-  const token = await login(keypair);
-  onStep?.("withdrawing");
-  const instructions = await withdraw(token, { amountUsdc: fromStroops(balance) });
-  await payClassic(keypair, {
-    destination: instructions.accountId,
-    amount: balance,
-    memo: instructions.memo,
-  });
-
-  const done = await waitFor(token, instructions.id, ["completed"], {
-    onUpdate: (tx) => onStep?.("withdrawing", tx.status),
-  });
-  onStep?.("paid-out");
-  return { usdc: balance, tryAmount: done.amount_out };
+  return stello.withdrawToIban({ keypair, onStep });
 }
 
-/** Organizer's success path: take the proceeds and cash them out. */
+/** Organizer's success path: take the proceeds, then cash them out. */
 export async function withdrawProceedsToIban({
   keypair,
   campaignId,
@@ -276,26 +159,13 @@ export async function withdrawProceedsToIban({
   onStep?: OnStep;
 }): Promise<{ usdc: bigint; tryAmount?: string }> {
   const campaign = await getCampaign(campaignId);
-  if (!campaign) throw new Error(`campaign ${campaignId} does not exist`);
+  if (!campaign) throw new Error(`kampanya ${campaignId} yok`);
+
   if (!campaign.proceeds_taken) {
     onStep?.("settled");
     await withdrawProceeds(keypair, campaignId);
   }
-
-  const balance = await usdcBalance(keypair.publicKey());
-  const token = await login(keypair);
-  onStep?.("withdrawing");
-  const instructions = await withdraw(token, { amountUsdc: fromStroops(balance) });
-  await payClassic(keypair, {
-    destination: instructions.accountId,
-    amount: balance,
-    memo: instructions.memo,
-  });
-  const done = await waitFor(token, instructions.id, ["completed"], {
-    onUpdate: (tx) => onStep?.("withdrawing", tx.status),
-  });
-  onStep?.("paid-out");
-  return { usdc: balance, tryAmount: done.amount_out };
+  return stello.withdrawToIban({ keypair, onStep });
 }
 
 /**
@@ -313,7 +183,7 @@ export async function refundAll({
   onProgress?: (done: number, total: number, user: string) => void;
 }): Promise<{ refunded: number; total: bigint }> {
   const campaign = await getCampaign(campaignId);
-  if (!campaign) throw new Error(`campaign ${campaignId} does not exist`);
+  if (!campaign) throw new Error(`kampanya ${campaignId} yok`);
 
   let refunded = 0;
   let total = 0n;

@@ -206,7 +206,7 @@ async function relayStage(): Promise<void> {
     onStep: (name, detail) => step(`  ${name}${detail ? `: ${detail}` : ""}`),
   });
 
-  step(`anchor delivered ${delivered} USDC, pledge on-chain: ${fromStroops(pledged)} USDC`);
+  step(`router dispatched ${fromStroops(delivered)} USDC, pledge on-chain: ${fromStroops(pledged)} USDC`);
   check(pledged > 0n, "the bank transfer never became a pledge");
 }
 
