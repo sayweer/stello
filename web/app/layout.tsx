@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#FCFFD5",
+  themeColor: "#ffffff",
 };
 
 /* Theme is applied before first paint, and for the whole document rather than just the

@@ -70,14 +70,14 @@ export default function BottomSheet({
 }
 
 const backdrop: React.CSSProperties = {
-  position: "fixed", inset: 0, zIndex: 1300, background: "rgba(34,62,5,0.45)",
+  position: "fixed", inset: 0, zIndex: 1300, background: "rgba(15,15,15,0.45)",
 };
 const sheet: React.CSSProperties = {
   position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 1310,
   padding: "10px 16px calc(20px + env(safe-area-inset-bottom))",
   borderRadius: "18px 18px 0 0",
   background: "var(--surface)", borderTop: "1px solid var(--line)",
-  boxShadow: "0 -18px 48px -12px rgba(34,62,5,0.28)",
+  boxShadow: "0 -18px 48px -12px rgba(15,15,15,0.28)",
 };
 const grabber: React.CSSProperties = {
   width: 40, height: 4, borderRadius: 100, margin: "0 auto 10px",

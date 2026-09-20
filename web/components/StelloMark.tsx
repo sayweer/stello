@@ -28,7 +28,7 @@ export default function StelloMark({ size = 20, mono = false, className }: Props
       {/* Body: top bar + upper-left stem, bottom bar + lower-right stem. */}
       <path d="M8 6h48v10H8zM8 16h10v10H8zM46 38h10v10H46zM8 48h48v10H8z" fill="currentColor" />
       {/* The held money. Kept clear of both stems so the gap reads at 16px. */}
-      <rect x="22" y="27" width="20" height="10" fill="var(--mark-accent, #A2CB28)" />
+      <rect x="22" y="27" width="20" height="10" fill="var(--mark-accent, #fdda24)" />
     </svg>
   );
 }

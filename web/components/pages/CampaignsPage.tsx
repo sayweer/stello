@@ -88,7 +88,7 @@ export default function CampaignsPage({
               </div>
             </div>
 
-            <div className="ledger__row ledger__row--head">
+            <div className="ledger__row ledger__row--camp ledger__row--head">
               <span className="eyebrow">Kalan</span>
               <span className="eyebrow">Durum</span>
               <span className="eyebrow">Kampanya</span>
@@ -110,12 +110,11 @@ export default function CampaignsPage({
                 return (
                   <div
                     key={String(c.id)}
-                    className={`ledger__row${c.secondsLeft > 0 ? "" : " ledger__row--quiet"}`}
+                    className={`ledger__row ledger__row--camp${c.secondsLeft > 0 ? "" : " ledger__row--quiet"}`}
                     onClick={() => onOpen(c.id)}
                     role="button"
                     tabIndex={0}
                     onKeyDown={(e) => e.key === "Enter" && onOpen(c.id)}
-                    style={{ cursor: "pointer" }}
                   >
                     <span className="ledger__when">{timeLeft(c.secondsLeft)}</span>
                     <span className={`ledger__kind${v.kind === "no" ? " is-no" : ""}`}>{v.text}</span>

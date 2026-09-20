@@ -11,14 +11,14 @@
    ========================================================================== */
 
 .shell{
-  --bg: #fcffd5;
-  --surface: #f4fadc;
-  --ink: #223e05;
-  --ink-2: #55693f;
-  --green: #a2cb28;
-  --red: #a62021;
-  --line: rgba(34, 62, 5, 0.16);
-  --raise: rgba(34, 62, 5, 0.05);
+  --bg: #ffffff;
+  --surface: #f5f5f2;
+  --ink: #0f0f0f;
+  --ink-2: #5c5c5c;
+  --green: #fdda24;
+  --red: #c4281c;
+  --line: rgba(15,15,15, 0.16);
+  --raise: rgba(15,15,15, 0.05);
 
   --display: "Questrial", system-ui, sans-serif;
   --body: "Geist", system-ui, -apple-system, sans-serif;
@@ -30,15 +30,15 @@
 }
 
 :root[data-theme="dark"] .shell{
-  --bg: #152a03;
-  --surface: #1e3a06;
-  --ink: #edf6d2;
-  --ink-2: #94a87a;
-  --line: rgba(162, 203, 40, 0.24);
-  --raise: rgba(162, 203, 40, 0.06);
+  --bg: #0f0f0f;
+  --surface: #1c1c1c;
+  --ink: #ffffff;
+  --ink-2: #a3a3a3;
+  --line: rgba(255,255,255,0.18);
+  --raise: rgba(255,255,255,0.07);
 }
 
-.shell ::selection{ background:var(--green); color:#223e05; }
+.shell ::selection{ background:var(--green); color:#0f0f0f; }
 
 /* Form fields inherit nothing by default — not the body face, not a size. They were rendering
  * in the system font at the browser's own default, which on iOS is under the 16px threshold:
@@ -126,7 +126,7 @@
   position:absolute; left:0; top:calc(100% + 8px); min-width:280px; padding:6px;
   border-radius:12px; background:var(--surface);
   border:1px solid var(--line);
-  box-shadow:0 16px 40px -18px rgba(34,62,5,0.35); z-index:1200;
+  box-shadow:0 16px 40px -18px rgba(15,15,15,0.35); z-index:1200;
 }
 .tswitch__row{
   display:flex; align-items:center; gap:8px; width:100%;
@@ -373,7 +373,7 @@
 .shell .anav__cta--ghost:hover{ background:var(--raise); }
 .shell .anav__menu{
   background:var(--surface); border:1px solid var(--line);
-  box-shadow:0 16px 40px -18px rgba(34,62,5,0.35);
+  box-shadow:0 16px 40px -18px rgba(15,15,15,0.35);
 }
 /* the menu's items are plain <button>s (appnav.css paints them for the dark landing nav);
    inside the shell they have to write in ink or they vanish on the cream menu */
