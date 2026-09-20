@@ -121,7 +121,8 @@ curl -o .claude/skills/stello-integration/SKILL.md \\
           <code>stello-sdk/server</code> relay’i taşır; istemci koduna hiç girmemelidir.
         </li>
         <li>
-          Paket henüz npm’de olmadığı için <code>pnpm add stello-sdk</code> yazılmamalıdır.
+          Paket kendi tip tanımlarını taşır; <code>@types/stello-sdk</code> diye bir bağımlılık
+          eklenmemelidir.
         </li>
       </ul>
 

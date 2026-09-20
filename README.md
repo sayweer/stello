@@ -4,7 +4,7 @@
 
 Stello, banka havalesiyle Soroban kontratlarını kullanmak için bir TypeScript SDK, router kontratı ve relay sağlar. Kullanıcı IBAN ve referans kodu görür; uygulamanın `on_deposit(user, amount, arg)` fonksiyonu USDC aktarımıyla aynı transaction içinde çağrılır.
 
-Şu an Stellar testnet ve Türk mock anchor kullanılır. Gerçek banka havalesi/KYC yoktur. SDK henüz npm'de yayımlanmadı; bağımsız uygulamalarda `.tgz` paketi olarak kurulabilir.
+Şu an Stellar testnet ve Türk mock anchor kullanılır. Gerçek banka havalesi/KYC yoktur. SDK npm'de [`stello-sdk`](https://www.npmjs.com/package/stello-sdk) adıyla yayımlıdır.
 
 ## Projelerin sınırı
 
@@ -37,10 +37,8 @@ pnpm sdk:pack   # artifacts/stello-sdk-0.1.0.tgz
 
 ## Başka bir projeye kur
 
-Üretilen arşivi uygulamanın `vendor/` klasörüne kopyala:
-
 ```bash
-pnpm add ./vendor/stello-sdk-0.1.0.tgz @stellar/stellar-sdk
+pnpm add stello-sdk @stellar/stellar-sdk
 ```
 
 ```ts

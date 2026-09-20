@@ -19,12 +19,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 function Installation() { return <>
   <p className="intro">Node.js 22.12 veya üstü ve pnpm ile başla. Stello v0.1 ESM olarak dağıtılır ve TypeScript tiplerini içerir.</p>
-  <h2>1. Paketi hazırla</h2><p>Paket henüz npm’de yayımlanmadı. Stello deposundan bağımsız kurulabilen bir arşiv üret:</p>
-  <CodeBlock code={`git clone https://github.com/sayweer/stello.git\ncd stello\npnpm install\npnpm sdk:pack`} />
-  <p>Komut <code>artifacts/stello-sdk-0.1.0.tgz</code> üretir. Kaynak değişikliklerinin GitHub’a gönderilmiş olması gerekir; yerel depoda doğrudan son iki komutu kullanabilirsin.</p>
-  <h2>2. Kendi uygulamana kur</h2><p>Arşivi uygulamanın <code>vendor/</code> klasörüne kopyala. Uygulama bu repoya veya <code>workspace:*</code> bağımlılığına ihtiyaç duymaz.</p>
-  <CodeBlock code={`pnpm add ./vendor/stello-sdk-0.1.0.tgz @stellar/stellar-sdk`} />
-  <div className="callout"><strong>npm yayını sonrasında</strong><p>Aynı paketi <code>pnpm add stello-sdk @stellar/stellar-sdk</code> ile kurabileceksin. Bu komut yayın gerçekleşmeden çalışmaz.</p></div>
+  <h2>1. Paketi kur</h2><p>Paket npm’de yayımlıdır; uygulaman bu repoya ya da bir <code>workspace:*</code> bağımlılığına ihtiyaç duymaz.</p>
+  <CodeBlock code={`pnpm add stello-sdk @stellar/stellar-sdk`} />
+  <p><code>@stellar/stellar-sdk</code> eşlenik bağımlılıktır: sürümünü uygulaman belirler, böylece projende tek bir kopyası bulunur. Tip tanımları paketin içinde gelir, ayrı bir <code>@types</code> paketi yoktur.</p>
+  <h2>2. Sunucu tarafını ayır</h2><p>Relay <code>stello-sdk/server</code> alt yolundan gelir ve landing anahtarını taşır. Bu alt yol yalnızca sunucuda çalışan kodda içe aktarılmalıdır; istemci paketi (<code>stello-sdk</code>) hiçbir sır içermez.</p>
+  <CodeBlock code={`import { Stello } from "stello-sdk";          // istemci\nimport { relayOnce } from "stello-sdk/server"; // yalnız sunucu`} />
   <h2>3. İlk ödemeyi oluştur</h2><p>Örnekte kayıtlı kumbara rotası <code>{example.routeId}</code> kullanılır. Kendi uygulaman için <Link href="/docs/contracts">bir rota kaydet</Link>. Ödeme ilerleyebilmesi için <Link href="/docs/relay">Stello relay’i çalışıyor olmalı</Link>.</p>
   <CodeBlock title="integration.ts" code={fullSnippet} />
   <p><code>amountTry</code> TL tutarını string olarak alır. Sonuçtaki <code>amount</code> yedi ondalık basamaklı USDC’nin en küçük birimidir; ekranda <code>fromStroops(result.amount)</code> kullan.</p>
@@ -64,7 +63,7 @@ function Relay() { return <>
 function Example() { const url = process.env.NEXT_PUBLIC_CAMPAIGN_URL; return <>
   <p className="intro">Stello Kampanya, SDK’nın ilk tüketicisi: hedef tutmazsa katılımcılarına taahhütlerini ve bonus paylarını geri veren bağımsız bir uygulama.</p>
   <div className="callout"><strong>İki ayrı proje</strong><p><code>stello/</code> SDK, router, relay ve bu siteyi içerir. <code>stello-kampanya/</code> kendi arayüzünü, kampanya kontratını ve iş kurallarını içerir.</p></div>
-  <h2>Örnek projeyi çalıştır</h2><CodeBlock code={`cd stello-kampanya\npnpm install\npnpm dev`} /><p>Yayın öncesi örnek, <code>vendor/stello-sdk-0.1.0.tgz</code> dosyasından SDK’yı kurar. Bu arşiv proje ile birlikte taşınabilir; komşu bir Stello klasörü gerekmez.</p>
+  <h2>Örnek projeyi çalıştır</h2><CodeBlock code={`cd stello-kampanya\npnpm install\npnpm dev`} /><p>Örnek, SDK’yı herkes gibi registry’den kurar: <code>package.json</code> içinde <code>stello-sdk</code> normal bir bağımlılık olarak durur. Komşu bir Stello klasörü gerekmez — katmanın gerçekten paket olarak tüketilebildiğinin kanıtı da budur.</p>
   <h2>Entegrasyonun bulunduğu yerler</h2><div className="table-scroll"><table><thead><tr><th>Dosya</th><th>Sorumluluk</th></tr></thead><tbody><tr><td><code>lib/campaign/config.ts</code></td><td>Uygulamanın rota ve kontrat adresi</td></tr><tr><td><code>lib/campaign/flows.ts</code></td><td>Stello istemcisine kampanya argümanı verir</td></tr><tr><td><code>lib/campaign/contracts.ts</code></td><td>Kampanya kontratını SDK yardımcılarıyla çağırır</td></tr><tr><td><code>contracts/campaign</code></td><td>Hedef, süre, bonus, katılım ve iade kuralları</td></tr></tbody></table></div>
   <h2>Kendi uygulamana uyarlamak</h2><p>Kampanyanın iş kurallarını taşımana gerek yok. Kendi <code>on_deposit</code> fonksiyonunu ekle, kendi rotanı kaydet ve frontend’den kendi argümanını gönder. Örnek uygulamanın ödeme akışı, senin kullanacağın SDK ile aynıdır.</p>
   {url ? <a className="button primary" href={url} target="_blank" rel="noreferrer">Örnek uygulamayı aç ↗</a> : <p className="muted">Canlı uygulama URL’si henüz tanımlı değil. Ayrı GitHub deposu ve deploy tamamlandığında bu sayfaya bağlanacak.</p>}
@@ -72,10 +71,11 @@ function Example() { const url = process.env.NEXT_PUBLIC_CAMPAIGN_URL; return <>
 </>; }
 
 function Publishing() { return <>
-  <p className="intro">Stello, pnpm ile kurulabilen bir npm paketidir. pnpm paket yöneticisidir; SDK’nın herkese dağıtılacağı yer npm registry veya bir paket arşividir.</p>
+  <p className="intro">Stello <a href="https://www.npmjs.com/package/stello-sdk" target="_blank" rel="noreferrer">npm’de <code>stello-sdk</code></a> adıyla yayımlıdır. Bu sayfa yeni bir sürümün nasıl çıkarıldığını anlatır.</p>
   <h2>Yerel doğrulama</h2><CodeBlock code={`pnpm check\ncargo test\npnpm sdk:pack`} /><p><code>pnpm check</code> SDK testlerini, tip kontrolünü ve dokümantasyon sitesinin production build’ini çalıştırır. Pack sırasında derlenmiş JavaScript ve tip tanımları üretilir.</p>
-  <h2>Arkadaşlarına yayın öncesi denet</h2><p><code>artifacts/stello-sdk-0.1.0.tgz</code> dosyasını paylaş. Kendi projelerindeki <code>vendor/</code> klasörüne ekleyip kurabilirler:</p><CodeBlock code={`pnpm add ./vendor/stello-sdk-0.1.0.tgz @stellar/stellar-sdk`} /><p>Paylaşılan router’a kendi rotalarını kaydetmeleri ve Stello relay’inin çalışması gerekir. Arkadaşların landing secret’a ihtiyaç duymaz.</p>
-  <h2>npm yayını</h2><p>Aşağıdaki komutlar bir npm hesabıyla gerçek yayın yapar. Paket adının sahipliği ve sürümünü kontrol ettikten sonra proje sahibi tarafından çalıştırılır.</p><CodeBlock code={`npm login\ncd packages/core\npnpm publish --access public`} /><p>Yayın sonrasında örnek uygulamada arşiv bağımlılığını registry sürümüne geçir:</p><CodeBlock code={`pnpm add stello-sdk@0.1.0`} />
+  <h2>Yayın öncesi arşivi denetle</h2><p><code>pnpm sdk:pack</code> çıktısı yayımlanacak dosyaların tamamıdır. Yayından önce içeriğini oku: pakete yalnız <code>dist/</code>, <code>README.md</code>, <code>LICENSE</code> ve <code>package.json</code> girmelidir.</p><CodeBlock code={`tar -tzf artifacts/stello-sdk-0.1.0.tgz`} /><p>Aynı arşivi boş bir projede kurup içe aktarmak, yayından dönülemeyeceği için en ucuz sigortadır.</p>
+  <h2>npm yayını</h2><p>Sürümü yükselt, sonra paket klasöründen yayınla. Hesapta iki adımlı doğrulama açıksa npm tarayıcıda onay ister; onay verilene kadar komut bekler.</p><CodeBlock code={`cd packages/core\nnpm version patch\nnpm publish --access public`} /><p>Yayın geri alınamaz: aynı sürüm numarası bir daha kullanılamaz ve <code>npm unpublish</code> yalnız dar bir zaman aralığında çalışır. Sürüm numarasını yayından önce doğrula.</p>
+  <h2>Tüketicileri yükselt</h2><p>Bu repodaki deployment dosyaları SDK paketinin içine gömülür. Router, anchor veya landing adresi değişirse yeni bir sürüm çıkarmak zorunludur; aksi halde kurulu uygulamalar eski adresleri çağırmaya devam eder.</p><CodeBlock code={`pnpm add stello-sdk@latest`} />
   <h2>Web ve relay deploy’u</h2><p>Hosting üzerinde bu monoreponun kökünden <code>pnpm build</code> çalıştır. Next uygulaması <code>web/</code> altındadır. Relay için server ortamında landing anahtarı ve izinli origin’leri, örnek uygulama için public relay URL’sini tanımla.</p><p>SDK paketi testnet deployment’ını içinde taşır. Router, anchor veya landing değiştiğinde deployment dosyalarını güncelle, yeni SDK sürümü üret ve uygulamaları o sürüme geçir.</p>
 </>; }
 

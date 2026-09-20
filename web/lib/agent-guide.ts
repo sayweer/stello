@@ -180,17 +180,13 @@ second route pointing at the same contract — register once and store the numbe
 
 ## Step 3 — the client
 
-The package is not on npm yet. Build an archive from the Stello repository and install it
-from the app's vendor directory:
+Install from npm. Node.js 22.12+ is required, and \`@stellar/stellar-sdk\` is a peer
+dependency, so the app pins its own version:
 
-    git clone https://github.com/sayweer/stello.git && cd stello
-    pnpm install && pnpm sdk:pack      # -> artifacts/stello-sdk-${VERSION}.tgz
+    pnpm add stello-sdk @stellar/stellar-sdk
 
-    # in the user's app
-    pnpm add ./vendor/stello-sdk-${VERSION}.tgz @stellar/stellar-sdk
-
-After the npm release the equivalent is \`pnpm add stello-sdk @stellar/stellar-sdk\`. That
-command does not work before publication — do not write it into a user's package.json yet.
+The package is ESM only and ships its own type declarations; there is no \`@types\` package
+to add.
 
     import { Keypair } from "@stellar/stellar-sdk";
     import { Stello, fromStroops } from "stello-sdk";
@@ -301,7 +297,7 @@ After wiring it up, check these rather than assuming:
 - Regenerating the keypair on each render — the user loses their account.
 - Treating \`amount\` as a decimal number — it is a bigint of stroops.
 - Importing the relay into browser code — leaks the landing key.
-- Writing \`pnpm add stello-sdk\` before the package is published — it fails.
+- Adding a \`@types/stello-sdk\` dependency — the package ships its own declarations.
 - Assuming \`accepted: false\` means the router refunded — the target must do it.
 `;
 }
@@ -347,7 +343,7 @@ Establish these three things with the user; guessing any of them produces broken
 - \`amountTry\` is a string in lira; render results with \`fromStroops\`.
 - The keypair must be persisted, never regenerated per render.
 - \`stello-sdk/server\` holds the relay and must never reach client code.
-- The package is not on npm yet — install the archive from \`vendor/\`.
+- \`pnpm add stello-sdk @stellar/stellar-sdk\`; ESM only, Node 22.12+.
 
 ## Be honest about the state
 

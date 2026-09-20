@@ -12,17 +12,15 @@ bank app ──TRY──▶ anchor ──USDC──▶ landing account ──▶
 
 > Testnet preview, against the Turkish mock anchor (`tr-mock-anchor.fly.dev`). Bank transfers and KYC are simulated. The package currently embeds this testnet deployment; it is not a configurable mainnet on-ramp.
 
-## Install before the npm release
+## Install
 
-Requires Node.js **22.12+**. From the Stello repository, run `pnpm install` and `pnpm sdk:pack`. This produces `artifacts/stello-sdk-0.1.0.tgz`, including JavaScript, TypeScript declarations and the license.
-
-Copy the archive into your app's `vendor/` directory, then install it:
+Requires Node.js **22.12+**.
 
 ```bash
-pnpm add ./vendor/stello-sdk-0.1.0.tgz @stellar/stellar-sdk
+pnpm add stello-sdk @stellar/stellar-sdk
 ```
 
-Your app does not need this repository or a workspace link. Once the package has been published to npm, the equivalent command is `pnpm add stello-sdk @stellar/stellar-sdk`. It will not work before publication.
+Ships JavaScript, TypeScript declarations and the license. ESM only.
 
 ## Integrate in three steps
 
@@ -131,7 +129,7 @@ Why a router at all: an anchor cannot deposit to a contract address, and a token
 | Example target (piggy bank), route 2 | `CDF6WDCS3M36RN6ERREM4B5ZT74RL5SU3I2TLJ2JXB5DCODMHPP266UH` |
 | Landing account | `GBWOY746OPO2GOADBVBZKDXZC6VAEYB5JGKGKWB7ETGEH6UUELJYNTFL` |
 
-A full app built on this SDK — a dominant-assurance crowdfunding campaign — is maintained in the separate `stello-kampanya` project. It installs this package as an archive before the registry release. Its GitHub publication is a separate step.
+A full app built on this SDK — a dominant-assurance crowdfunding campaign — is maintained in the separate `stello-kampanya` project. It installs this package from the registry like anyone else would, with no source dependency on this repository.
 
 ## License
 
