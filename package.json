@@ -3,17 +3,22 @@
   "private": true,
   "type": "module",
   "engines": {
-    "node": ">=22"
+    "node": ">=22.12.0"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p packages/core/tsconfig.json",
-    "test": "node --import tsx --test packages/core/src/*.test.ts",
-    "relayer": "node --env-file-if-exists=.env --import tsx scripts/relayer.ts",
-    "e2e": "node --env-file-if-exists=.env --import tsx scripts/e2e.ts"
+    "test": "node --import tsx --test packages/core/src/*.test.ts web/lib/*.test.ts",
+    "relayer": "pnpm sdk:build && node --env-file-if-exists=.env --import tsx scripts/relayer.ts",
+    "e2e": "pnpm sdk:build && node --env-file-if-exists=.env --import tsx scripts/e2e.ts",
+    "sdk:build": "pnpm --filter stello-sdk build",
+    "sdk:pack": "pnpm --filter stello-sdk pack --out artifacts/stello-sdk-%v.tgz",
+    "dev": "pnpm sdk:build && pnpm --filter @stello/web dev",
+    "build": "pnpm sdk:build && pnpm --filter @stello/web build",
+    "check": "pnpm test && pnpm typecheck && pnpm build"
   },
   "dependencies": {
     "@stellar/stellar-sdk": "^17.1.0",
-    "@stello/core": "workspace:*"
+    "stello-sdk": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

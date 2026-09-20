@@ -1,49 +1,27 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
-
+import Link from "next/link";
+import SiteHeader from "@/components/SiteHeader";
 import "./globals.css";
-import "./appnav.css";
-import "./landing.css";
-import "./shell.css";
-import "./ledger.css";
 
 export const metadata: Metadata = {
-  title: "Stello — hedef tutmazsa, kazanan sen olursun",
-  description:
-    "Banka havalesiyle katıl. Hedef tutmazsa paran ve bonustan payın kendiliğinden hesabına döner.",
+  title: { default: "Stello — Bir havale, bir kontrat çağrısı", template: "%s · Stello" },
+  description: "Banka havalelerini Soroban kontrat çağrılarına dönüştüren Stello SDK. Kurulum, entegrasyon rehberi ve örnek uygulama.",
   icons: { icon: "/favicon.svg" },
 };
-
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  themeColor: "#ffffff",
-};
-
-/* Theme is applied before first paint, and for the whole document rather than just the
-   landing: useTheme only runs while the landing is mounted, so a dark preference would be
-   dropped the moment someone opened the app shell. Light is the brand default. */
-const themeScript = `try{var t=localStorage.getItem("stello-theme");if(t!=="dark"&&t!=="light")t="light";document.documentElement.setAttribute("data-theme",t);}catch(e){}`;
+export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#ffffff" };
+const themeScript = `try{var t=localStorage.getItem("stello-theme");document.documentElement.dataset.theme=t==="dark"?"dark":"light";}catch(e){}`;
 
 export default function RootLayout({ children }: { children: ReactNode }) {
-  return (
-    <html lang="tr" suppressHydrationWarning>
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap"
-          rel="stylesheet"
-        />
-        {/* Landing identity: Questrial for headings, Geist for body, Kalnia for the wordmark
-            and the opening curtain only. */}
-        <link
-          href="https://fonts.googleapis.com/css2?family=Questrial&family=Geist:wght@300;400;500;600;700&family=Kalnia:wght@500&display=swap"
-          rel="stylesheet"
-        />
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-      </head>
-      <body>{children}</body>
-    </html>
-  );
+  return <html lang="tr" suppressHydrationWarning><head>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+    <link href="https://fonts.googleapis.com/css2?family=Questrial&family=Geist:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+    <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+  </head><body>
+    <a className="skip-link" href="#main">İçeriğe geç</a>
+    <SiteHeader />
+    {children}
+    <footer className="site-footer container"><Link href="/" className="footer-brand">Stello<span>Bir havale, bir kontrat çağrısı.</span></Link><div><Link href="/docs">Dokümantasyon</Link><a href="https://github.com/sayweer/stello" target="_blank" rel="noreferrer">GitHub ↗</a><span>Testnet · MIT</span></div></footer>
+  </body></html>;
 }

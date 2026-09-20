@@ -2,52 +2,41 @@
  * End-to-end proof, with no UI involved: real anchor, real testnet.
  *
  *   pnpm e2e --stage anchor   just the SEP client (deposit lands as USDC)
+ *   pnpm e2e --stage chain    router + example target, no anchor involved
+ *   pnpm e2e --stage full     bank transfer → on_deposit → back out to an IBAN
  *
  * Every stage exits non-zero the moment a check fails, so a green run is
  * evidence rather than decoration.
  */
 import { Keypair } from "@stellar/stellar-sdk";
 
+import { readFileSync } from "node:fs";
+
 import {
   accountExists,
   addTrustline,
-  campaignCount,
-  campaignView,
-  claimAndWithdraw,
-  confirmDemoTransfer,
   config,
-  createCampaign,
   deposit,
   discover,
-  encodeArg,
   fromStroops,
-  fundBonus,
   fundWithFriendbot,
-  getCampaign,
+  getRoute,
   getTicket,
   hasTrustline,
-  KIND_PLEDGE,
+  invokeContract,
   login,
   openTicket,
   price,
   putCustomer,
-  quoteClaim,
-  refundAll,
-  relayOnce,
+  readContract,
   simulateBankTransfer,
-  startJoin,
-  Status,
-  statusName,
+  Stello,
   ticketAddress,
   ticketIdFromAddress,
   usdcBalance,
   waitFor,
-  waitForDeposit,
-  withdrawProceedsToIban,
-} from "@stello/core";
-
-/** 1 USDC in stroops. */
-const USDC = 10_000_000n;
+} from "stello-sdk";
+import { relayOnce } from "stello-sdk/server";
 
 const stage = argValue("--stage") ?? "anchor";
 const started = Date.now();
@@ -122,44 +111,30 @@ async function anchorStage(): Promise<void> {
   );
 }
 
-/** The contract client, against the live deployment. No anchor involved. */
+const example = JSON.parse(
+  readFileSync(new URL("../deployments/example.json", import.meta.url), "utf8"),
+) as { targetId: string; routeId: number };
+
+const balanceOf = (user: string) =>
+  readContract<bigint>(example.targetId, "balance", { user });
+
+/** The router and the example target, against the live deployment. No anchor involved. */
 async function chainStage(): Promise<void> {
-  const before = await campaignCount();
-  step(`campaigns so far: ${before}`);
-
-  const organizer = Keypair.random();
-  await fundWithFriendbot(organizer.publicKey());
-  const deadline = BigInt(Math.floor(Date.now() / 1000) + 600);
-  const id = await createCampaign(organizer, {
-    title: "e2e chain stage",
-    goal: 100n * 10_000_000n,
-    deadline,
-    bonus: 0n,
-    cap: 4n * 10_000_000n,
-  });
-  step(`created campaign ${id}`);
-  check(id === before + 1n, "campaign ids should be sequential");
-
-  const created = await getCampaign(id);
-  check(created?.organizer === organizer.publicKey(), "organizer was not stored");
-  check(created?.deadline === deadline, "deadline was not stored");
-  check(created?.status === Status.Open, "a fresh campaign should be open");
-  step(
-    `read back: goal ${created?.goal}, cap ${created?.cap}, status ${statusName(created!.status)}`,
-  );
+  const route = await getRoute(example.routeId);
+  check(route?.target === example.targetId, "the example route points somewhere else");
+  step(`route ${example.routeId} → ${route?.name} (${example.targetId.slice(0, 8)}…)`);
 
   const user = Keypair.random();
   await fundWithFriendbot(user.publicKey());
-  const ticket = await openTicket(user, config.routeId, encodeArg(KIND_PLEDGE, id));
+  const ticket = await openTicket(user, example.routeId, Buffer.from([1]));
   const stored = await getTicket(ticket);
   check(stored?.user === user.publicKey(), "the ticket does not belong to the user");
-  check(stored?.route === config.routeId, "the ticket points at the wrong route");
+  check(stored?.route === example.routeId, "the ticket points at the wrong route");
 
   const address = ticketAddress(config.landing, ticket);
   step(`ticket ${ticket} → pay into ${address}`);
   check(ticketIdFromAddress(address) === String(ticket), "muxed address lost the ticket id");
-
-  check((await quoteClaim(id, user.publicKey())) === 0n, "nothing is claimable yet");
+  check((await balanceOf(user.publicKey())) === 0n, "a fresh user should have nothing saved");
 }
 
 function landingKeypair(): Keypair {
@@ -170,141 +145,48 @@ function landingKeypair(): Keypair {
   return keypair;
 }
 
-/** One bank transfer, end to end: deposit → relay → pledge on-chain. */
-async function relayStage(): Promise<void> {
-  const landing = landingKeypair();
-  const organizer = Keypair.random();
-  await fundWithFriendbot(organizer.publicKey());
-
-  const id = await createCampaign(organizer, {
-    title: "e2e relay stage",
-    goal: 100n * USDC,
-    deadline: BigInt(Math.floor(Date.now() / 1000) + 900),
-    bonus: 0n,
-    cap: 4n * USDC,
-  });
-  step(`campaign ${id} (no bonus, so it is live immediately)`);
-
-  const user = Keypair.random();
-  const handle = await startJoin({
-    keypair: user,
-    campaignId: id,
-    amountTry: "100",
-    onStep: (name, detail) => step(`  ${name}${detail ? `: ${detail}` : ""}`),
-  });
-  step(`ticket ${handle.ticket} → ${ticketAddress(config.landing, handle.ticket)}`);
-  step(`IBAN: ${handle.iban}`);
-
-  await confirmDemoTransfer(handle, "100");
-  step("bank transfer simulated");
-
-  const { pledged, delivered } = await waitForDeposit({
-    keypair: user,
-    campaignId: id,
-    handle,
-    triggerRelay: () => relayOnce({ landing, onEvent: (message) => step(`  relay: ${message}`) }),
-    onStep: (name, detail) => step(`  ${name}${detail ? `: ${detail}` : ""}`),
-  });
-
-  step(`router dispatched ${fromStroops(delivered)} USDC, pledge on-chain: ${fromStroops(pledged)} USDC`);
-  check(pledged > 0n, "the bank transfer never became a pledge");
-}
-
-/** The whole product without a UI: both outcomes of a campaign. */
+/**
+ * The whole layer without a UI, as an integrating app experiences it: a bank
+ * transfer becomes a contract call, and the money comes back out to an IBAN.
+ */
 async function fullStage(): Promise<void> {
   const landing = landingKeypair();
-  const relay = () => relayOnce({ landing, onEvent: (message) => step(`  relay: ${message}`) });
-  const succeed = argValue("--path") === "success";
+  const stello = new Stello({ route: example.routeId });
+  const onStep = (name: string, detail?: string) => step(`  ${name}${detail ? `: ${detail}` : ""}`);
 
-  const organizer = Keypair.random();
-  await fundWithFriendbot(organizer.publicKey());
-  const deadline = BigInt(Math.floor(Date.now() / 1000) + 240);
-  const id = await createCampaign(organizer, {
-    title: succeed ? "e2e success path" : "e2e refund path",
-    // The refund path must miss its goal; the success path must reach it.
-    goal: succeed ? 1n * USDC : 1000n * USDC,
-    deadline,
-    bonus: succeed ? 0n : 1n * USDC,
-    cap: 4n * USDC,
+  const user = Keypair.random();
+  const handle = await stello.requestDeposit({
+    keypair: user,
+    arg: Buffer.from([1]),
+    amountTry: "100",
+    onStep,
   });
-  step(`campaign ${id}, deadline in ${Number(deadline) - Math.floor(Date.now() / 1000)}s`);
+  step(`ticket ${handle.ticket}, IBAN: ${handle.iban}`);
 
-  if (!succeed) {
-    step("organizer locks the bonus by bank transfer");
-    const funded = await fundBonus({
-      keypair: organizer,
-      campaignId: id,
-      triggerRelay: relay,
-      onStep: (name, detail) => step(`  ${name}${detail ? `: ${detail}` : ""}`),
-    });
-    check(funded.bonus_funded >= funded.bonus, "the bonus was not fully funded");
-    step(`bonus locked: ${fromStroops(funded.bonus_funded)} USDC — the campaign is live`);
-  }
+  await stello.simulateBankTransfer(handle, "100");
+  step("bank transfer simulated");
 
-  const participants = [Keypair.random(), Keypair.random()];
-  for (const [index, participant] of participants.entries()) {
-    const handle = await startJoin({ keypair: participant, campaignId: id, amountTry: "100" });
-    await confirmDemoTransfer(handle, "100");
-    const { pledged } = await waitForDeposit({
-      keypair: participant,
-      campaignId: id,
-      handle,
-      triggerRelay: relay,
-    });
-    step(`participant ${index + 1} pledged ${fromStroops(pledged)} USDC`);
-  }
-
-  const view = await campaignView(id);
-  step(`total ${fromStroops(view!.total)} USDC from ${view!.pledgers} people (${view!.percent}%)`);
-
-  step("waiting for the deadline");
-  while (Math.floor(Date.now() / 1000) <= Number(deadline)) {
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-  }
-
-  if (succeed) {
-    const { usdc, tryAmount } = await withdrawProceedsToIban({
-      keypair: organizer,
-      campaignId: id,
-      onStep: (name, detail) => step(`  ${name}${detail ? `: ${detail}` : ""}`),
-    });
-    step(`organizer cashed out ${fromStroops(usdc)} USDC → ${tryAmount} TRY`);
-    check(tryAmount !== undefined, "the anchor never paid out the proceeds");
-    check((await getCampaign(id))?.status === Status.Succeeded, "the campaign should have succeeded");
-    return;
-  }
-
-  // Nobody signs for themselves: a third party refunds the whole room.
-  const stranger = Keypair.random();
-  await fundWithFriendbot(stranger.publicKey());
-  const { refunded, total } = await refundAll({
-    payer: stranger,
-    campaignId: id,
-    onProgress: (done, all, user) => step(`  refunded ${done}/${all}: ${user.slice(0, 8)}…`),
+  const dispatched = await stello.waitForDeposit({
+    handle,
+    triggerRelay: () => relayOnce({ landing, onEvent: (message) => step(`  relay: ${message}`) }),
+    onStep,
   });
-  step(`refunded ${refunded} people, ${fromStroops(total)} USDC including the bonus`);
-  check(refunded === participants.length, "not everyone was refunded");
+  step(`router dispatched ${fromStroops(dispatched.amount)} USDC, accepted=${dispatched.accepted}`);
+  check(dispatched.accepted, "the example target should accept the deposit");
 
-  const first = participants[0]!;
-  const paid = await quoteClaim(id, first.publicKey());
-  check(paid === 0n, "a refunded pledge should no longer be claimable");
-  const balance = await usdcBalance(first.publicKey());
-  step(`participant 1 balance after the refund: ${fromStroops(balance)} USDC`);
-  check(balance > 2n * USDC, "the refund should be the pledge plus a bonus share");
+  const saved = await balanceOf(user.publicKey());
+  check(saved === dispatched.amount, "the contract did not record what the router delivered");
+  step(`on_deposit ran: ${fromStroops(saved)} USDC saved in the contract`);
 
-  const { usdc, tryAmount } = await claimAndWithdraw({
-    keypair: first,
-    campaignId: id,
-    onStep: (name, detail) => step(`  ${name}${detail ? `: ${detail}` : ""}`),
-  });
-  step(`participant 1 cashed out ${fromStroops(usdc)} USDC → ${tryAmount} TRY`);
-  check(tryAmount !== undefined, "the anchor never paid out to the participant");
+  await invokeContract(example.targetId, user, "withdraw", { user: user.publicKey() });
+  const { usdc, tryAmount } = await stello.withdrawToIban({ keypair: user, onStep });
+  step(`cashed out ${fromStroops(usdc)} USDC → ${tryAmount} TRY`);
+  check(tryAmount !== undefined, "the anchor never paid out");
 }
 
 const stages: Record<string, () => Promise<void>> = {
   anchor: anchorStage,
   chain: chainStage,
-  relay: relayStage,
   full: fullStage,
 };
 

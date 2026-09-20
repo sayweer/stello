@@ -9,7 +9,8 @@
  */
 import { Keypair } from "@stellar/stellar-sdk";
 
-import { config, relayOnce } from "@stello/core";
+import { config } from "stello-sdk";
+import { relayOnce } from "stello-sdk/server";
 
 const secret = process.env.LANDING_SECRET;
 if (!secret) {

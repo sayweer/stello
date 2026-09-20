@@ -1,5 +1,6 @@
 import { Networks, StellarToml, Transaction, WebAuth } from "@stellar/stellar-sdk";
 import type { Keypair } from "@stellar/stellar-sdk";
+import { Buffer } from "buffer";
 
 import { config } from "./config.ts";
 

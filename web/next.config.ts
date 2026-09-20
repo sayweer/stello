@@ -1,8 +1,8 @@
 import type { NextConfig } from "next";
 
 const config: NextConfig = {
-  // @stello/core is consumed as TypeScript source, not a built package.
-  transpilePackages: ["@stello/core"],
+  // Build the workspace SDK before starting Next (the root scripts do this).
+  transpilePackages: ["stello-sdk"],
 };
 
 export default config;

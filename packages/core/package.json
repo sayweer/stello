@@ -1,12 +1,29 @@
 {
-  "name": "@stello/core",
+  "name": "stello-sdk",
   "version": "0.1.0",
-  "private": true,
+  "description": "Let people without a crypto wallet use your Soroban contract: they send a bank transfer, your contract gets called.",
+  "keywords": ["stellar", "soroban", "anchor", "sep-6", "sep-10", "on-ramp", "bank-transfer", "muxed"],
+  "license": "MIT",
+  "author": "Seyit Ali Değirmen",
+  "repository": { "type": "git", "url": "git+https://github.com/sayweer/stello.git", "directory": "packages/core" },
+  "homepage": "https://github.com/sayweer/stello#readme",
   "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
+    "./server": { "types": "./dist/server.d.ts", "import": "./dist/server.js" }
+  },
+  "files": ["dist", "README.md", "LICENSE"],
+  "sideEffects": false,
+  "engines": { "node": ">=22.12.0" },
+  "publishConfig": { "access": "public" },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "prepack": "pnpm build"
   },
   "dependencies": {
-    "@stellar/stellar-sdk": "^17.1.0"
+    "@stellar/stellar-sdk": "^17.1.0",
+    "buffer": "^6.0.3"
   }
 }

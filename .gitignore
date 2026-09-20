@@ -35,3 +35,7 @@ web/tsconfig.tsbuildinfo
 web/AGENTS.md
 web/CLAUDE.md
 .scratch/
+
+# Built SDK and local distribution archives
+packages/core/dist/
+artifacts/

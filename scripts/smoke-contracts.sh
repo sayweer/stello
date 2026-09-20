@@ -30,43 +30,36 @@ USER=$(ensure_key smoke-user)
 XLM_SAC=$(stellar contract id asset --asset native --network "$NETWORK")
 say "landing $LANDING / user $USER / XLM SAC $XLM_SAC"
 
-say "deploying a throwaway router+campaign pair on native XLM"
+say "deploying a throwaway router + example target on native XLM"
 ROUTER=$(stellar contract deploy --wasm target/wasm32v1-none/release/stello_router.wasm \
   --source-account landing --config-dir "$CFG" --network "$NETWORK" \
   -- --relayer "$LANDING" --usdc "$XLM_SAC" | tail -1)
-CAMPAIGN=$(stellar contract deploy --wasm target/wasm32v1-none/release/stello_campaign.wasm \
+TARGET=$(stellar contract deploy --wasm target/wasm32v1-none/release/stello_example_target.wasm \
   --source-account deployer --config-dir "$CFG" --network "$NETWORK" \
-  -- --router "$ROUTER" --usdc "$XLM_SAC" | tail -1)
-echo "router=$ROUTER campaign=$CAMPAIGN"
+  -- --router "$ROUTER" --token "$XLM_SAC" | tail -1)
+echo "router=$ROUTER target=$TARGET"
 
 ROUTE=$(call --id "$ROUTER" --source-account deployer \
-  -- register_route --owner "$DEPLOYER" --target "$CAMPAIGN" --name "smoke" | tail -1)
+  -- register_route --owner "$DEPLOYER" --target "$TARGET" --name "smoke" | tail -1)
 
-DEADLINE=$(( $(date +%s) + 75 ))
-ID=$(call --id "$CAMPAIGN" --source-account deployer \
-  -- create --organizer "$DEPLOYER" --title "smoke" --goal $((100 * XLM)) \
-     --deadline "$DEADLINE" --bonus 0 --cap $((4 * XLM)) | tail -1)
-say "route=$ROUTE campaign id=$ID deadline=$DEADLINE"
-
-# arg = [kind=1][campaign id, 8 bytes big-endian]
-ARG=$(printf '01%016x' "$ID")
+# arg is opaque to the router; this target reads its first byte (00 = refuse).
 TICKET=$(call --id "$ROUTER" --source-account smoke-user \
-  -- open_ticket --user "$USER" --route "$ROUTE" --arg "$ARG" | tail -1)
-say "ticket=$TICKET arg=$ARG"
+  -- open_ticket --user "$USER" --route "$ROUTE" --arg 01 | tail -1)
+REFUSED_TICKET=$(call --id "$ROUTER" --source-account smoke-user \
+  -- open_ticket --user "$USER" --route "$ROUTE" --arg 00 | tail -1)
+say "route=$ROUTE ticket=$TICKET refusing ticket=$REFUSED_TICKET"
 
 REF1=$(printf '%064x' 1)
 REF2=$(printf '%064x' 2)
+balance_of() { call --id "$XLM_SAC" --source-account deployer --send=no -- balance --id "$1" | tail -1 | tr -d '"'; }
 
 say "1) dispatch: one transaction, sourced by the landing account"
 ACCEPTED=$(call --id "$ROUTER" --source-account landing \
   -- dispatch --ticket "$TICKET" --amount $((5 * XLM)) --payment_ref "$REF1" | tail -1)
-echo "accepted=$ACCEPTED"
+SAVED=$(call --id "$TARGET" --source-account deployer --send=no -- balance --user "$USER" | tail -1 | tr -d '"')
+echo "accepted=$ACCEPTED saved=$SAVED"
 [ "$ACCEPTED" = "true" ] || { echo "FAIL: deposit was not accepted"; exit 1; }
-
-PLEDGE=$(call --id "$CAMPAIGN" --source-account deployer --send=no \
-  -- get_pledge --campaign "$ID" --user "$USER" | tail -1)
-echo "pledge=$PLEDGE"
-echo "$PLEDGE" | grep -q "\"$((5 * XLM))\"" || { echo "FAIL: pledge not recorded"; exit 1; }
+[ "$SAVED" -eq $((5 * XLM)) ] || { echo "FAIL: on_deposit did not record the deposit"; exit 1; }
 
 say "2) the same payment reference is refused"
 if call --id "$ROUTER" --source-account landing \
@@ -75,25 +68,27 @@ if call --id "$ROUTER" --source-account landing \
 fi
 echo "refused as expected"
 
-say "3) waiting for the deadline"
-while [ "$(date +%s)" -le "$DEADLINE" ]; do sleep 5; done
+say "3) a deposit the target refuses is refunded in the same transaction"
+BEFORE=$(balance_of "$USER")
+REFUSED=$(call --id "$ROUTER" --source-account landing \
+  -- dispatch --ticket "$REFUSED_TICKET" --amount $((3 * XLM)) --payment_ref "$REF2" | tail -1)
+AFTER=$(balance_of "$USER")
+echo "accepted=$REFUSED  balance $BEFORE -> $AFTER"
+[ "$REFUSED" = "false" ] || { echo "FAIL: the target should have refused"; exit 1; }
+[ "$AFTER" -eq $((BEFORE + 3 * XLM)) ] || { echo "FAIL: the refused deposit was not refunded"; exit 1; }
 
-say "4) a late transfer is accepted on-chain but refunded by the campaign"
-BEFORE=$(call --id "$XLM_SAC" --source-account deployer --send=no -- balance --id "$USER" | tail -1 | tr -d '"')
-LATE=$(call --id "$ROUTER" --source-account landing \
-  -- dispatch --ticket "$TICKET" --amount $((3 * XLM)) --payment_ref "$REF2" | tail -1)
-AFTER=$(call --id "$XLM_SAC" --source-account deployer --send=no -- balance --id "$USER" | tail -1 | tr -d '"')
-echo "accepted=$LATE  balance $BEFORE -> $AFTER"
-[ "$LATE" = "false" ] || { echo "FAIL: a late pledge should be rejected"; exit 1; }
-[ "$AFTER" -eq $((BEFORE + 3 * XLM)) ] || { echo "FAIL: the late transfer was not refunded"; exit 1; }
+say "4) a stranger cannot push a payment through"
+if call --id "$ROUTER" --source-account deployer \
+  -- dispatch --ticket "$TICKET" --amount $((1 * XLM)) --payment_ref "$(printf '%064x' 9)" >/dev/null 2>&1; then
+  echo "FAIL: dispatch ran without the relayer"; exit 1
+fi
+echo "refused as expected"
 
-say "5) anyone can refund the pledger: the deployer claims on the user's behalf"
-PAYOUT=$(call --id "$CAMPAIGN" --source-account deployer \
-  -- claim --campaign "$ID" --user "$USER" | tail -1 | tr -d '"')
-FINAL=$(call --id "$XLM_SAC" --source-account deployer --send=no -- balance --id "$USER" | tail -1 | tr -d '"')
-echo "payout=$PAYOUT  balance $AFTER -> $FINAL"
-[ "$PAYOUT" -eq $((5 * XLM)) ] || { echo "FAIL: unexpected payout"; exit 1; }
-[ "$FINAL" -eq $((AFTER + 5 * XLM)) ] || { echo "FAIL: the refund did not reach the user"; exit 1; }
+say "5) the user takes the money back out of the contract"
+call --id "$TARGET" --source-account smoke-user -- withdraw --user "$USER" >/dev/null
+FINAL=$(balance_of "$USER")
+echo "balance $AFTER -> $FINAL"
+[ "$FINAL" -gt "$AFTER" ] || { echo "FAIL: withdraw paid nothing"; exit 1; }
 
 say "6) an integrating app reads the dispatch back off the chain"
 node --import tsx scripts/check-dispatch.ts "$ROUTER" "$TICKET" $((5 * XLM)) || {
@@ -102,4 +97,4 @@ node --import tsx scripts/check-dispatch.ts "$ROUTER" "$TICKET" $((5 * XLM)) || 
 
 say "ALL CHECKS PASSED"
 echo "router  : https://stellar.expert/explorer/testnet/contract/$ROUTER"
-echo "campaign: https://stellar.expert/explorer/testnet/contract/$CAMPAIGN"
+echo "target  : https://stellar.expert/explorer/testnet/contract/$TARGET"

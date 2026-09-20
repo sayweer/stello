@@ -1,5 +1,7 @@
 import { Keypair } from "@stellar/stellar-sdk";
-import { relayOnce } from "@stello/core";
+import { config } from "stello-sdk";
+import { relayOnce, type RelayResult } from "stello-sdk/server";
+import { relayAccess } from "../../../lib/relay-access";
 
 /**
  * Serverless fallback for the relay: the browser calls this once the anchor
@@ -11,15 +13,36 @@ import { relayOnce } from "@stello/core";
  * The landing secret never leaves the server.
  */
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
-export async function POST(): Promise<Response> {
+// Coalesce browser polling within one server instance. The chain remains the
+// idempotency boundary across different instances and the standalone loop.
+let inFlight: Promise<RelayResult> | undefined;
+
+function access(request: Request) {
+  return relayAccess(request, process.env.STELLO_ALLOWED_ORIGINS ?? (process.env.NODE_ENV === "development" ? "http://localhost:3001" : ""));
+}
+
+export async function OPTIONS(request: Request): Promise<Response> {
+  const { allowed, headers } = access(request);
+  return new Response(null, { status: allowed ? 204 : 403, headers });
+}
+
+export async function POST(request: Request): Promise<Response> {
+  const { allowed, headers } = access(request);
+  if (!allowed) return Response.json({ error: "Origin is not allowed" }, { status: 403, headers });
   const secret = process.env.LANDING_SECRET;
   if (!secret) {
-    return Response.json({ error: "LANDING_SECRET is not configured" }, { status: 500 });
+    return Response.json({ error: "LANDING_SECRET is not configured" }, { status: 503, headers });
   }
 
   try {
-    const result = await relayOnce({ landing: Keypair.fromSecret(secret) });
+    const landing = Keypair.fromSecret(secret);
+    if (landing.publicKey() !== config.landing) {
+      return Response.json({ error: "Landing key does not match the deployment" }, { status: 503, headers });
+    }
+    inFlight ??= relayOnce({ landing }).finally(() => { inFlight = undefined; });
+    const result = await inFlight;
     return Response.json({
       dispatched: result.dispatched.map((entry) => ({
         ticket: String(entry.ticket),
@@ -28,11 +51,11 @@ export async function POST(): Promise<Response> {
       })),
       skipped: result.skipped.length,
       failed: result.failed,
-    });
+    }, { headers });
   } catch (error) {
     return Response.json(
       { error: error instanceof Error ? error.message : String(error) },
-      { status: 502 },
+      { status: 502, headers },
     );
   }
 }

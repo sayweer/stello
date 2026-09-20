@@ -5,6 +5,4 @@ export * from "./muxed.ts";
 export * from "./account.ts";
 export * from "./anchor.ts";
 export * from "./contracts.ts";
-export * from "./relay.ts";
 export * from "./stello.ts";
-export * from "./flows.ts";

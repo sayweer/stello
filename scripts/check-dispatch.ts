@@ -6,7 +6,7 @@
  * This is the anchor-free half of the claim: the router publishes what it did,
  * and any app can read it without touching the receiving contract's state.
  */
-import { Stello, soroban } from "@stello/core";
+import { Stello, soroban } from "stello-sdk";
 
 const [router, ticket, expected] = process.argv.slice(2);
 

@@ -1,5 +1,6 @@
 import { nativeToScVal, scValToNative } from "@stellar/stellar-sdk";
 import type { Keypair } from "@stellar/stellar-sdk";
+import { Buffer } from "buffer";
 
 import { fromStroops } from "./amounts.ts";
 import {
@@ -90,6 +91,12 @@ export interface StelloOptions {
   route: number;
   /** Router deployment to use. Defaults to the one in deployments/testnet.json. */
   router?: string;
+  /**
+   * Stello's hosted relay endpoint. When set, `waitForDeposit` nudges it so the
+   * payment is dispatched right away instead of on the relay's next pass. Your
+   * app never holds the landing account's key — the relay is Stello's job.
+   */
+  relayUrl?: string;
 }
 
 export class Stello {
@@ -135,17 +142,18 @@ export class Stello {
     onStep,
   }: {
     keypair: Keypair;
-    arg: Buffer;
+    arg: Uint8Array;
     amountTry: string;
     onStep?: OnStep;
   }): Promise<DepositHandle> {
+    if (arg.byteLength > 64) throw new Error("arg must be at most 64 bytes");
     const token = await this.ensureReady(keypair, onStep);
 
     onStep?.("ticket");
     // Recorded before the ticket exists, so the event search can never match a
     // dispatch that happened before this deposit.
     const fromLedger = (await soroban.getLatestLedger()).sequence;
-    const ticket = await openTicket(keypair, this.options.route, arg, this.router);
+    const ticket = await openTicket(keypair, this.options.route, Buffer.from(arg), this.router);
 
     onStep?.("deposit");
     const instructions = await deposit(token, {
@@ -199,9 +207,14 @@ export class Stello {
     });
 
     onStep?.("waiting-chain");
+    const nudge =
+      triggerRelay ??
+      (this.options.relayUrl
+        ? () => fetch(this.options.relayUrl!, { method: "POST" }).catch(() => undefined)
+        : undefined);
     const deadline = Date.now() + timeoutMs;
     while (Date.now() < deadline) {
-      await triggerRelay?.();
+      await nudge?.();
       const dispatched = await this.findDispatch(handle);
       if (dispatched) return dispatched;
       await new Promise((resolve) => setTimeout(resolve, 2000));
