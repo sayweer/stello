@@ -59,16 +59,22 @@ export default function AppShell({
 
       <div className="shell__main">
         <header className="shell__top">
-          <div className="tswitch">
-            <button className="tswitch__chip" onClick={() => onGo("campaigns")} type="button">
-              Tüm kampanyalar
+          {/* Left stays empty until there is something to switch between, as in the reference. */}
+          <span />
+          {address ? (
+            <button className="anav__chip" onClick={() => onGo("campaigns")} type="button">
+              <i className="anav__dot" /> {shortAddr(address)}
             </button>
-          </div>
-          <div className="tswitch">
-            <span className="tswitch__chip" style={{ cursor: "default" }}>
-              {address ? shortAddr(address) : "henüz hesap yok"}
-            </span>
-          </div>
+          ) : (
+            // The pill always points at the other door, never at the page you are on.
+            <button
+              className="anav__cta"
+              onClick={() => onGo(page === "new" ? "campaigns" : "new")}
+              type="button"
+            >
+              {page === "new" ? "Kampanyalar" : "Kampanya aç"}
+            </button>
+          )}
         </header>
         <main className="shell__content">{children}</main>
       </div>

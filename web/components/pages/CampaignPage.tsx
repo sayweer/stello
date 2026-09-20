@@ -147,12 +147,14 @@ export default function CampaignPage({ id, onBack }: { id: bigint; onBack: () =>
           {isOpen && view.live && !handle && !joined && (
             <>
               <div className="eyebrow">Katıl</div>
-              <div className="two" style={{ marginTop: 14, alignItems: "end" }}>
+              <div className="panel__title">Bir havale yeter.</div>
+              <div className="two" style={{ marginTop: 6, alignItems: "end" }}>
                 <label className="lab">
-                  <span>Göndereceğin tutar (TL)</span>
+                  <span className="eyebrow">Göndereceğin tutar (TL)</span>
                   <input
-                    className="field"
+                    className="field field--mono"
                     inputMode="numeric"
+                    aria-label="Göndereceğin tutar, TL"
                     value={amountTry}
                     onChange={(e) => setAmountTry(e.target.value.replace(/[^\d]/g, ""))}
                   />
@@ -166,7 +168,7 @@ export default function CampaignPage({ id, onBack }: { id: bigint; onBack: () =>
                   {join.busy ? "Hazırlanıyor…" : "IBAN'ı göster"}
                 </button>
               </div>
-              <div className="panel__note" style={{ marginTop: 12 }}>
+              <div className="panel__note">
                 Hedef tutmazsa bu tutarın tamamı, bonustan payınla birlikte geri döner.
               </div>
             </>
@@ -185,10 +187,11 @@ export default function CampaignPage({ id, onBack }: { id: bigint; onBack: () =>
           {handle && (
             <>
               <div className="eyebrow">Havaleni gönder</div>
-              <div style={{ marginTop: 14, display: "grid", gap: 10 }}>
+              <div className="panel__title">Bu bilgilerle gönder.</div>
+              <div style={{ marginTop: 6, display: "grid", gap: 10 }}>
                 <div className="panel__kv">
                   <span>Alıcı</span>
-                  <span className="num">{handle.iban ?? "—"}</span>
+                  <span style={{ color: "var(--ink)", textAlign: "right" }}>{handle.iban ?? "—"}</span>
                 </div>
                 <div className="panel__kv">
                   <span>Tutar</span>
@@ -211,7 +214,7 @@ export default function CampaignPage({ id, onBack }: { id: bigint; onBack: () =>
                   {join.busy ? "Bekleniyor…" : "Havaleyi yaptım (demo)"}
                 </button>
               </div>
-              <div className="panel__note" style={{ marginTop: 12 }}>
+              <div className="panel__note">
                 Test ağında gerçek banka yok; bu düğme havalenin ulaştığını bildirir. Gerçek ağda
                 bu adımı bankan yapar.
               </div>
@@ -227,8 +230,9 @@ export default function CampaignPage({ id, onBack }: { id: bigint; onBack: () =>
           {/* ---- the way out ---- */}
           {!isOpen && failed && view.mine && !view.mine.claimed && paidOut === null && (
             <>
-              <div className="eyebrow">Paran geri dönüyor</div>
-              <div className="meter__big" style={{ marginTop: 12 }}>
+              <div className="eyebrow">Hedef tutmadı</div>
+              <div className="panel__title">Paran geri dönüyor.</div>
+              <div className="meter__big">
                 <span className="num">{fmtUsdc(view.mine.claimable)}</span>
                 <span> USDC — taahhüdün + bonus payın</span>
               </div>
@@ -262,10 +266,10 @@ export default function CampaignPage({ id, onBack }: { id: bigint; onBack: () =>
             <div className="steps" style={{ marginTop: 18 }}>
               <div className="step">
                 <span className="step__n">…</span>
-                <span>
+                <div style={{ fontSize: 13.5 }}>
                   {STEP_LABEL[busyStep.name]}
                   {busyStep.detail ? ` (${busyStep.detail})` : ""}
-                </span>
+                </div>
               </div>
             </div>
           )}
@@ -308,9 +312,10 @@ export default function CampaignPage({ id, onBack }: { id: bigint; onBack: () =>
 
         <motion.section className="panel panel--pad" {...fadeUp(0.14)}>
           <div className="panel__head">
-            <div className="eyebrow">Kurallar Stellar'da</div>
+            <div className="eyebrow">Kurallar</div>
             <a
               className="linkbtn"
+              style={{ whiteSpace: "nowrap" }}
               href={`${EXPLORER}/contract/${config.campaignId}`}
               target="_blank"
               rel="noreferrer"

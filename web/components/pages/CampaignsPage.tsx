@@ -35,6 +35,36 @@ export default function CampaignsPage({
   const open = campaigns?.filter((c) => c.secondsLeft > 0).length ?? 0;
   const closed = (campaigns?.length ?? 0) - open;
 
+  if (campaigns !== null && campaigns.length === 0) {
+    return (
+      <div style={{ minHeight: "70vh", display: "grid", placeItems: "center" }}>
+        <div
+          style={{
+            maxWidth: 440,
+            textAlign: "center",
+            padding: "24px 16px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 12,
+            alignItems: "center",
+          }}
+        >
+          <div style={{ fontSize: 40, color: "var(--ink)" }}>◭</div>
+          <h1 className="panel__title" style={{ margin: 0, fontSize: 30, fontWeight: 500 }}>
+            Yeterli kişi çıkarsa olacak işler için.
+          </h1>
+          <p className="panel__note" style={{ margin: 0, fontSize: 14.5 }}>
+            Hedefi ve süreyi koy, bonusu kilitle. Katılanlar yalnızca havale gönderir; tutmazsa
+            paraları ve bonus payları kendiliğinden döner.
+          </p>
+          <button className="btn btn--lg" onClick={onNew} type="button">
+            İlk kampanyayı aç
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="page">
       <div className="page__main">
@@ -62,11 +92,12 @@ export default function CampaignsPage({
               <div className="eyebrow">Şu an katılabileceğin</div>
               <div className="verdict__line">
                 <span className="verdict__amount">
-                  {campaigns === null ? "Zincirden okunuyor…" : "Açık kampanya yok"}
+                  {campaigns === null ? "Okunuyor…" : "Şimdilik yok"}
                 </span>
               </div>
               <div className="verdict__why">
-                İlkini sen açabilirsin: hedefi, süreyi ve kilitleyeceğin bonusu sen belirlersin.
+                Açık bir kampanya olduğunda burada görünür — kalan süresi, toplanan tutarı ve
+                katılan kişi sayısıyla.
               </div>
             </div>
           )}
@@ -95,9 +126,6 @@ export default function CampaignsPage({
               <span className="eyebrow sm-hide" style={{ textAlign: "right" }}>
                 Toplanan
               </span>
-              <span className="eyebrow sm-hide" style={{ textAlign: "right" }}>
-                Kişi
-              </span>
             </div>
 
             {!campaigns || campaigns.length === 0 ? (
@@ -124,7 +152,6 @@ export default function CampaignsPage({
                     <span className="ledger__amt sm-hide">
                       {fmtUsdc(c.total)} / {fmtUsdc(c.goal)}
                     </span>
-                    <span className="ledger__tx sm-hide">{c.pledgers}</span>
                   </div>
                 );
               })
@@ -139,24 +166,25 @@ export default function CampaignsPage({
           <div className="steps" style={{ marginTop: 14 }}>
             <div className="step">
               <span className="step__n">1</span>
-              <span>Bir kampanya seç, ne kadar TL göndereceğini yaz.</span>
+              <div style={{ fontSize: 13.5 }}>Bir kampanya seç, ne kadar TL göndereceğini yaz.</div>
             </div>
             <div className="step">
               <span className="step__n">2</span>
-              <span>Verilen IBAN'a, sana özel açıklama koduyla havale yap.</span>
+              <div style={{ fontSize: 13.5 }}>Verilen IBAN'a, sana özel açıklama koduyla havale yap.</div>
             </div>
             <div className="step">
               <span className="step__n">3</span>
-              <span>Tutmazsa paran ve bonus payın kendiliğinden döner.</span>
+              <div style={{ fontSize: 13.5 }}>Tutmazsa paran ve bonus payın kendiliğinden döner.</div>
             </div>
           </div>
         </motion.section>
 
         <motion.section className="panel panel--pad" {...fadeUp(0.1)}>
           <div className="panel__head">
-            <div className="eyebrow">Kurallar Stellar'da</div>
+            <div className="eyebrow">Kurallar</div>
             <a
               className="linkbtn"
+              style={{ whiteSpace: "nowrap" }}
               href={`${EXPLORER}/contract/${config.campaignId}`}
               target="_blank"
               rel="noreferrer"
@@ -166,15 +194,15 @@ export default function CampaignsPage({
           </div>
           <div className="panel__kv">
             <span>Bonus</span>
-            <span className="num">baştan kilitli</span>
+            <span style={{ color: "var(--ink)" }}>baştan kilitli</span>
           </div>
           <div className="panel__kv">
             <span>İade</span>
-            <span className="num">imza istemez</span>
+            <span style={{ color: "var(--ink)" }}>imza istemez</span>
           </div>
           <div className="panel__kv">
             <span>Aynı havale</span>
-            <span className="num">bir kez sayılır</span>
+            <span style={{ color: "var(--ink)" }}>bir kez sayılır</span>
           </div>
           <div style={{ marginTop: 16 }}>
             <button className="btn btn--ghost" onClick={onNew} type="button">

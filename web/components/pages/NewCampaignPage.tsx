@@ -72,56 +72,71 @@ export default function NewCampaignPage({ onCreated }: { onCreated: (id: bigint)
   return (
     <div className="page">
       <div className="page__main">
-        <motion.section className="verdict verdict--quiet" {...fadeUp(0)}>
-          <div>
-            <div className="eyebrow">Organizatör</div>
-            <div className="verdict__line">
-              <span className="verdict__amount">Kampanya aç</span>
-            </div>
-            <div className="verdict__why">
-              Hedefi ve süreyi sen koyarsın. Bonusu baştan kilitlersin; hedef tutmazsa katılanlara
-              dağılır, tutarsa sana geri döner.
-            </div>
+        <motion.section className="panel panel--pad" {...fadeUp(0)}>
+          <div className="eyebrow">Yeni kampanya</div>
+          <div className="panel__title">Hedefi koy, bonusu kilitle.</div>
+          <div className="panel__note">
+            Bonus kontrata yatmadan kampanya katılıma açılmaz. Hedef tutmazsa katılanlara dağılır,
+            tutarsa sana geri döner. Bir söz değil — Stellar'da zorlanan bir kural.
           </div>
-        </motion.section>
 
-        <motion.section className="panel panel--pad" {...fadeUp(0.08)}>
-          <div style={{ display: "grid", gap: 16 }}>
+          <div style={{ display: "grid", gap: 16, marginTop: 6 }}>
             <label className="lab">
-              <span>Ne için toplanıyor?</span>
+              <span className="eyebrow">Ne için toplanıyor</span>
               <input
                 className="field"
                 value={title}
                 maxLength={64}
                 placeholder="Gece pizzası"
+                aria-label="Kampanyanın adı"
                 onChange={(e) => setTitle(e.target.value)}
               />
             </label>
 
             <div className="two">
               <label className="lab">
-                <span>Hedef (USDC)</span>
-                <input className="field" inputMode="decimal" value={goal} onChange={(e) => setGoal(e.target.value)} />
+                <span className="eyebrow">Hedef (USDC)</span>
+                <input
+                  className="field field--mono"
+                  inputMode="decimal"
+                  aria-label="Hedef, USDC"
+                  value={goal}
+                  onChange={(e) => setGoal(e.target.value)}
+                />
               </label>
               <label className="lab">
-                <span>Kilitleyeceğin bonus (USDC)</span>
-                <input className="field" inputMode="decimal" value={bonus} onChange={(e) => setBonus(e.target.value)} />
+                <span className="eyebrow">Kilitlenecek bonus (USDC)</span>
+                <input
+                  className="field field--mono"
+                  inputMode="decimal"
+                  aria-label="Bonus, USDC"
+                  value={bonus}
+                  onChange={(e) => setBonus(e.target.value)}
+                />
               </label>
             </div>
 
             <div className="two">
               <label className="lab">
-                <span>Kişi başı bonus tavanı (USDC)</span>
-                <input className="field" inputMode="decimal" value={cap} onChange={(e) => setCap(e.target.value)} />
+                <span className="eyebrow">Kişi başı tavan (USDC)</span>
+                <input
+                  className="field field--mono"
+                  inputMode="decimal"
+                  aria-label="Kişi başı bonus tavanı, USDC"
+                  value={cap}
+                  onChange={(e) => setCap(e.target.value)}
+                />
+                <span className="panel__note">Bonus payı kişi başı bu tutara kadar sayılır.</span>
               </label>
               <div className="lab">
-                <span>Süre</span>
-                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                <span className="eyebrow">Süre</span>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }} role="group" aria-label="Süre">
                   {DURATIONS.map((d) => (
                     <button
                       key={d.seconds}
                       className={`chip${duration === d.seconds ? " is-on" : ""}`}
                       onClick={() => setDuration(d.seconds)}
+                      aria-pressed={duration === d.seconds}
                       type="button"
                     >
                       {d.label}
@@ -146,10 +161,10 @@ export default function NewCampaignPage({ onCreated }: { onCreated: (id: bigint)
               <div className="steps">
                 <div className="step">
                   <span className="step__n">…</span>
-                  <span>
+                  <div style={{ fontSize: 13.5 }}>
                     {STEP_LABEL[flow.step.name] ?? flow.step.name}
                     {flow.step.detail ? ` (${flow.step.detail})` : ""}
-                  </span>
+                  </div>
                 </div>
               </div>
             )}
@@ -161,7 +176,7 @@ export default function NewCampaignPage({ onCreated }: { onCreated: (id: bigint)
       <div className="page__side">
         <motion.section className="panel panel--pad" {...fadeUp(0.06)}>
           <div className="eyebrow">Bonus neden var</div>
-          <div className="panel__note" style={{ marginTop: 10 }}>
+          <div className="panel__note">
             "Yeterli kişi olursa" işlerinde herkes başkasının önce davranmasını bekler. Bonus,
             erken katılana "tutmazsa kazanırsın" der — beklemeyi anlamsız kılar.
           </div>
@@ -169,7 +184,7 @@ export default function NewCampaignPage({ onCreated }: { onCreated: (id: bigint)
 
         <motion.section className="panel panel--pad" {...fadeUp(0.1)}>
           <div className="eyebrow">Tavan neden var</div>
-          <div className="panel__note" style={{ marginTop: 10 }}>
+          <div className="panel__note">
             Bonus payı kişi başı bu tutara kadar sayılır. Son dakikada büyük para koyup bonusu
             toplamak işe yaramaz.
           </div>
