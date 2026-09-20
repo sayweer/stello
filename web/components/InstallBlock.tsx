@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { inline } from "./Prose";
+import type { Copy } from "@/lib/copy";
 
 /**
  * The install command, in whichever package manager the reader uses.
@@ -15,7 +17,7 @@ const ADD: Record<Manager, string> = {
   bun: "bun add",
 };
 
-export default function InstallBlock() {
+export default function InstallBlock({ t }: { t: Copy["install"] }) {
   const [manager, setManager] = useState<Manager>("pnpm");
   const [copied, setCopied] = useState(false);
 
@@ -33,7 +35,7 @@ export default function InstallBlock() {
 
   return (
     <div className="install">
-      <div className="install-tabs" role="tablist" aria-label="Paket yöneticisi">
+      <div className="install-tabs" role="tablist" aria-label={t.managers}>
         {MANAGERS.map((name) => (
           <button
             key={name}
@@ -51,14 +53,11 @@ export default function InstallBlock() {
         <code>
           <span className="install-prompt">$</span> {command}
         </code>
-        <button type="button" onClick={copy} aria-label="Kurulum komutunu kopyala">
-          {copied ? "Kopyalandı" : "Kopyala"}
+        <button type="button" onClick={copy} aria-label={t.copyAria}>
+          {copied ? t.copied : t.copy}
         </button>
       </div>
-      <p className="install-note">
-        Node.js 22.12+ gerekir. <code>@stellar/stellar-sdk</code> eşlenik bağımlılıktır; sürümünü
-        uygulaman belirler.
-      </p>
+      <p className="install-note">{inline(t.note)}</p>
     </div>
   );
 }

@@ -44,14 +44,14 @@ SDK version: ${VERSION}. License: MIT.
 
 ## Docs
 
-- [What Stello is](${origin}/docs): the payment path, who owns which piece, the trust model
-- [Installation](${origin}/docs/installation): package, key handling, first payment end to end
-- [Contract and route](${origin}/docs/contracts): the on_deposit interface and route registration
-- [SDK reference](${origin}/docs/sdk): the Stello class and the helpers around it
-- [Relay](${origin}/docs/relay): what the relay does, why it is trusted, origin allow-lists
-- [Integrating with an agent](${origin}/docs/agents): these files, and how to point a coding agent at them
-- [Example app](${origin}/docs/example): the piggy bank contract and the separate campaign app
-- [Publishing](${origin}/docs/publishing): building the archive and releasing to npm
+- [What Stello is](${origin}/en/docs): the payment path, who owns which piece, the trust model
+- [Installation](${origin}/en/docs/installation): package, key handling, first payment end to end
+- [Contract and route](${origin}/en/docs/contracts): the on_deposit interface and route registration
+- [SDK reference](${origin}/en/docs/sdk): the Stello class and the helpers around it
+- [Relay](${origin}/en/docs/relay): what the relay does, why it is trusted, origin allow-lists
+- [Integrating with an agent](${origin}/en/docs/agents): these files, and how to point a coding agent at them
+- [Example app](${origin}/en/docs/example): the piggy bank contract and the separate campaign app
+- [Publishing](${origin}/en/docs/publishing): building the archive and releasing to npm
 
 ## On chain (${agentFacts.network})
 
@@ -78,7 +78,7 @@ This file is the whole integration. If you are an agent acting on a user's repos
 can complete it from here alone.
 
 Version: ${VERSION} · Network: ${agentFacts.network} · Anchor: ${agentFacts.anchor} (mock)
-Docs: ${origin}/docs · Source: https://github.com/sayweer/stello · License: MIT
+Docs: ${origin}/en/docs · Source: https://github.com/sayweer/stello · License: MIT
 
 ## When this applies
 
