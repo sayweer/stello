@@ -10,9 +10,10 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { agentsSnippet, skillMd } from "../web/lib/agent-guide.ts";
+import { siteUrl } from "../web/lib/site.ts";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const origin = process.argv[2] ?? "https://stello.dev";
+const origin = process.argv[2] ?? siteUrl;
 
 const files: [string, string][] = [
   [".claude/skills/stello-integration/SKILL.md", skillMd(origin)],

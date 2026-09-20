@@ -1,5 +1,7 @@
 import { headers } from "next/headers";
 
+import { siteUrl } from "./site";
+
 /**
  * The origin the reader actually reached us on, so the links an agent follows
  * point at the same deployment it is reading. Falls back to the production host
@@ -8,7 +10,7 @@ import { headers } from "next/headers";
 export async function siteOrigin(): Promise<string> {
   const list = await headers();
   const host = list.get("x-forwarded-host") ?? list.get("host");
-  if (!host) return "https://stello-web-rho.vercel.app";
+  if (!host) return siteUrl;
   const proto = list.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
   return `${proto}://${host}`;
 }
