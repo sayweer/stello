@@ -7,6 +7,7 @@ export const docs = [
   { slug: "contracts", title: "Kontrat ve rota", group: "ENTEGRASYON" },
   { slug: "sdk", title: "SDK referansı", group: "ENTEGRASYON" },
   { slug: "relay", title: "Relay bağlantısı", group: "ENTEGRASYON" },
+  { slug: "agents", title: "Ajanla entegrasyon", group: "ENTEGRASYON" },
   { slug: "example", title: "Örnek uygulama", group: "KAYNAKLAR" },
   { slug: "publishing", title: "Paket ve yayın", group: "KAYNAKLAR" },
 ] as const;

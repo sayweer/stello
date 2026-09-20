@@ -6,7 +6,11 @@ import CodeBlock from "@/components/CodeBlock";
 import { docs, deployment, example } from "@/lib/site";
 import { contractSnippet, fullSnippet, routeSnippet } from "@/lib/snippets";
 
-export function generateStaticParams() { return docs.filter((d) => d.slug).map(({ slug }) => ({ slug })); }
+/** Slugs rendered by this route. `agents` is absent: it has its own file. */
+const SLUGS = ["installation", "contracts", "sdk", "relay", "example", "publishing"] as const;
+
+/** `agents` has its own route file, so it must not also be generated here. */
+export function generateStaticParams() { return SLUGS.map((slug) => ({ slug })); }
 export const dynamicParams = false;
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
@@ -76,6 +80,7 @@ function Publishing() { return <>
 </>; }
 
 const pages: Record<string, () => ReactNode> = { installation: Installation, contracts: Contracts, sdk: Sdk, relay: Relay, example: Example, publishing: Publishing };
+
 export default async function DocPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   const Content = pages[slug];
