@@ -18,6 +18,8 @@ They send an ordinary bank transfer; your contract is called with the money alre
 [npm](https://www.npmjs.com/package/stello-sdk) ·
 [Türkçe](https://stello-web-rho.vercel.app/tr)
 
+<a href="https://stello-web-rho.vercel.app/en"><img src="docs/screenshots/stello-site.png" alt="The Stello developer site: one bank transfer, one contract call" width="880" /></a>
+
 </div>
 
 ---
@@ -258,6 +260,19 @@ To walk the full loop:
 3. **After the deadline** — if the goal was missed, **Send it to my IBAN** claims the pledge
    plus the bonus share and cashes it out through a SEP-6 withdrawal.
 
+The same loop, as a backer sees it — no wallet, no token names until the money is on chain:
+
+<table>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/campaign-2-iban.png" alt="The campaign shows an IBAN and a reference code" /><br /><sub><b>1 · An IBAN and a reference.</b> The ticket is already open on the router; the reference is the anchor's, the muxed id behind it is Stello's.</sub></td>
+    <td width="50%"><img src="docs/screenshots/campaign-3-pledged.png" alt="The pledge is recorded on chain and the counter moves" /><br /><sub><b>2 · The pledge is on chain.</b> 500 TRY became 10.2 USDC inside the campaign contract, through <code>on_deposit</code>.</sub></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="docs/screenshots/campaign-4-missed.png" alt="The goal was missed; the pledge and the bonus share are claimable" /><br /><sub><b>3 · The goal was missed.</b> A 100 TRY pledge (2.04 USDC) is now worth 12.04 USDC: the pledge plus the bonus share.</sub></td>
+    <td width="50%"><img src="docs/screenshots/campaign-5-paid-out.png" alt="595.72 TRY was sent to the backer's IBAN" /><br /><sub><b>4 · Back to the bank.</b> One click claims it and cashes it out through a SEP-6 withdrawal: 595.72 TRY to the IBAN.</sub></td>
+  </tr>
+</table>
+
 Bank transfers and KYC are simulated by the sandbox anchor and no real money moves. The
 contracts, the authorisation tree, the muxed attribution and the atomic dispatch are real and
 verifiable on chain.
@@ -380,7 +395,7 @@ flowchart LR
 ```
 contracts/router           the shared payment router            (14 tests)
 contracts/example-target   the smallest possible integration     (4 tests)
-packages/core              stello-sdk, published to npm          (11 tests)
+packages/core              stello-sdk, published to npm          (12 tests)
 web                        documentation site + /api/relay        (9 tests)
 scripts                    deploy, relay loop, smoke and end-to-end runs
 deployments                the single source of truth for addresses
@@ -618,7 +633,7 @@ stellar contract build
 | --- | --- | --- |
 | `contracts/router` | 14 | ticket and route issuance, dispatch, replay protection, unauthorised relayer, unknown ticket, input bounds, revert on target panic |
 | `contracts/example-target` | 4 | accept, refuse-and-refund, forged `on_deposit`, withdraw |
-| `packages/core` | 11 | amount conversion, payment-reference codec, muxed addresses, the relay's payment filter |
+| `packages/core` | 12 | amount conversion and division, payment-reference codec, muxed addresses, the relay's payment filter |
 | `web` | 9 | Turkish/English parity of every page, the relay's origin allow-list |
 | `pnpm e2e --stage anchor\|chain\|full` | live | the real anchor and testnet, exiting non-zero on the first failed check |
 

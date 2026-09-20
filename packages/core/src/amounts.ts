@@ -32,3 +32,8 @@ export function fromStroops(stroops: bigint): string {
   const whole = (absolute / SCALE).toString();
   return `${negative ? "-" : ""}${whole}${fraction ? `.${fraction}` : ""}`;
 }
+
+/** `dividend / divisor` for two amount strings, rounded down to 7 decimals. */
+export function divideAmounts(dividend: string, divisor: string): string {
+  return fromStroops((toStroops(dividend) * SCALE) / toStroops(divisor));
+}

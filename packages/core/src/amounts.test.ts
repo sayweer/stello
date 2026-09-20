@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { fromStroops, toStroops } from "./amounts.ts";
+import { divideAmounts, fromStroops, toStroops } from "./amounts.ts";
 
 test("parses the amount strings Horizon returns", () => {
   assert.equal(toStroops("12.3450000"), 123450000n);
@@ -29,4 +29,10 @@ test("round-trips through stroops", () => {
   }
   assert.equal(fromStroops(123450000n), "12.345");
   assert.equal(fromStroops(-25000000n), "-2.5");
+});
+
+test("divides a lira amount by a SEP-38 rate without floating point", () => {
+  // 100 TRY at 49.0290051 TRY per USDC, as the anchor quoted it on testnet.
+  assert.equal(divideAmounts("100", "49.0290051"), "2.0396089");
+  assert.equal(divideAmounts("10", "4"), "2.5");
 });

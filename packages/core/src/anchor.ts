@@ -2,6 +2,7 @@ import { Networks, StellarToml, Transaction, WebAuth } from "@stellar/stellar-sd
 import type { Keypair } from "@stellar/stellar-sdk";
 import { Buffer } from "buffer";
 
+import { divideAmounts } from "./amounts.ts";
 import { config } from "./config.ts";
 
 /**
@@ -288,6 +289,7 @@ export async function price(amountTry: string): Promise<{ usdc: string; rate: st
     "GET /prices",
   );
 
+  // SEP-38 `/prices` quotes a rate, not an amount: price = sell_amount / buy_amount.
   const quote = body.buy_assets?.[0];
-  return quote ? { usdc: quote.amount, rate: quote.price } : null;
+  return quote ? { usdc: divideAmounts(amountTry, quote.price), rate: quote.price } : null;
 }
