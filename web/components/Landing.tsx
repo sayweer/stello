@@ -1,32 +1,41 @@
 "use client";
 
-import { config } from "@stello/core";
-
-import { useCampaignList } from "@/lib/hooks.ts";
-import Hero from "./landing/Hero.tsx";
-import { Bonus, FinalCta, Footer, HowItWorks, MoneyTrail } from "./landing/Sections.tsx";
-import { useReveal } from "./landing/useReveal.ts";
+// Landing — the marketing surface. Structure, classes and motion are carried over from the
+// reference one to one; only the words, the doors and the numbers belong to Stello.
+import { useCampaignList, useWallet } from "@/lib/hooks.ts";
+import { useReveal } from "./landing/useReveal";
+import Hero from "./landing/Hero";
+import Proof from "./landing/Proof";
+import HowItWorks from "./landing/HowItWorks";
+import Guarantees from "./landing/Guarantees";
+import Privacy from "./landing/Privacy";
+import FinalCta from "./landing/FinalCta";
+import Footer from "./landing/Footer";
 
 export default function Landing({
-  onJoin,
+  onEnter,
   onCreate,
 }: {
-  onJoin: () => void;
+  /** Into the app — the campaign list. */
+  onEnter: () => void;
+  /** Into the app — the organizer's form. */
   onCreate: () => void;
 }) {
   useReveal();
   const campaigns = useCampaignList();
+  const { address } = useWallet();
 
   return (
-    // `lp--pending` hides the reveal targets from the first paint; useReveal
-    // either animates them in or removes the class outright.
+    // `lp--pending` hides the reveal targets from the first paint; useReveal either animates
+    // them in or removes the class outright.
     <div className="lp lp--pending">
-      <Hero campaigns={campaigns} onJoin={onJoin} onCreate={onCreate} />
+      <Hero campaigns={campaigns} address={address} onEnter={onEnter} onCreate={onCreate} />
+      <Proof />
       <HowItWorks />
-      <MoneyTrail />
-      <Bonus />
-      <FinalCta onJoin={onJoin} />
-      <Footer routerId={config.routerId} campaignId={config.campaignId} />
+      <Guarantees />
+      <Privacy />
+      <FinalCta onEnter={onEnter} onCreate={onCreate} />
+      <Footer campaigns={campaigns} />
     </div>
   );
 }

@@ -1,25 +1,28 @@
 "use client";
 
-import { config } from "@stello/core";
+// The product chrome: persistent sidebar (desktop) / bottom tabs (mobile) + a sticky
+// topbar carrying the account this browser is using. Pages render inside.
+import type { ReactNode } from "react";
 
-import Campaigns from "./Campaigns.tsx";
 import { useWallet } from "@/lib/hooks.ts";
+import { shortAddr } from "./format";
 
-/**
- * The product chrome: a sidebar on a desktop, bottom tabs on a phone, and a
- * sticky bar naming the account this browser is using. Pages render inside.
- */
-const NAV = [
-  { key: "campaigns", label: "Kampanyalar", icon: "≡" },
-  { key: "new", label: "Kampanya aç", icon: "+" },
-] as const;
+export type AppPage = "campaigns" | "new";
+
+const NAV: Record<AppPage, { label: string; icon: string }> = {
+  campaigns: { label: "Kampanyalar", icon: "◈" },
+  new: { label: "Kampanya aç", icon: "+" },
+};
+const APP_PAGES: AppPage[] = ["campaigns", "new"];
 
 export default function AppShell({
-  view,
+  page,
   onGo,
+  children,
 }: {
-  view: string;
-  onGo: (view: "landing" | "campaigns" | "new") => void;
+  page: string;
+  onGo: (view: "landing" | AppPage) => void;
+  children: ReactNode;
 }) {
   const { address } = useWallet();
 
@@ -27,76 +30,59 @@ export default function AppShell({
     <div className="shell">
       <aside className="shell__side">
         <button className="shell__brand" onClick={() => onGo("landing")} type="button">
-          Stello
+          <span className="shell__glyph" /> Stello
         </button>
-
         <nav className="shell__nav">
-          {NAV.map((item) => (
+          {APP_PAGES.map((p) => (
             <button
-              key={item.key}
-              className={`shell__item${view === item.key ? " is-active" : ""}`}
-              onClick={() => onGo(item.key)}
+              key={p}
+              className={`shell__item${page === p ? " is-active" : ""}`}
+              onClick={() => onGo(p)}
               type="button"
             >
-              <span className="shell__icon">{item.icon}</span> {item.label}
+              <span className="shell__icon">{NAV[p].icon}</span> {NAV[p].label}
             </button>
           ))}
         </nav>
-
         <div className="shell__foot">
-          <div className="shell__testnet">
-            Stellar testnet — gerçek para değil, test USDC'si.
-          </div>
+          <div className="shell__testnet">⚠ Test ağı — test parası, gerçek para değil.</div>
           <a
-            href={`https://stellar.expert/explorer/testnet/contract/${config.campaignId}`}
+            className="shell__docs"
+            href="https://github.com/sayweer/stello#readme"
             target="_blank"
             rel="noreferrer"
           >
-            Kontratı gör ↗
+            Nasıl çalışıyor ↗
           </a>
         </div>
       </aside>
 
       <div className="shell__main">
         <header className="shell__top">
-          <span className="shell__who">
-            {address ? (
-              <>
-                <i className="shell__dot" />
-                {address.slice(0, 4)}…{address.slice(-4)}
-              </>
-            ) : (
-              "Henüz hesap açılmadı"
-            )}
-          </span>
-          <button className="lp__cta lp__cta--ghost" onClick={() => onGo("landing")} type="button">
-            Ana sayfa
-          </button>
+          <div className="tswitch">
+            <button className="tswitch__chip" onClick={() => onGo("campaigns")} type="button">
+              Tüm kampanyalar
+            </button>
+          </div>
+          <div className="tswitch">
+            <span className="tswitch__chip" style={{ cursor: "default" }}>
+              {address ? shortAddr(address) : "henüz hesap yok"}
+            </span>
+          </div>
         </header>
-
-        <main className="shell__content">
-          {view === "new" ? (
-            <div className="page__head">
-              <p className="lp__k">Organizatör</p>
-              <h1 className="page__title">Kampanya aç</h1>
-              <p className="page__lede">Bu ekran sırada — önce katılım tarafını bitiriyoruz.</p>
-            </div>
-          ) : (
-            <Campaigns />
-          )}
-        </main>
+        <main className="shell__content">{children}</main>
       </div>
 
       <nav className="shell__tabs">
-        {NAV.map((item) => (
+        {APP_PAGES.map((p) => (
           <button
-            key={item.key}
-            className={`shell__tab${view === item.key ? " is-active" : ""}`}
-            onClick={() => onGo(item.key)}
+            key={p}
+            className={`shell__tab${page === p ? " is-active" : ""}`}
+            onClick={() => onGo(p)}
             type="button"
           >
-            <span className="shell__icon">{item.icon}</span>
-            {item.label}
+            <span className="shell__icon">{NAV[p].icon}</span>
+            {NAV[p].label}
           </button>
         ))}
       </nav>
