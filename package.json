@@ -1,6 +1,7 @@
 {
   "name": "stello",
   "private": true,
+  "packageManager": "pnpm@11.24.0",
   "type": "module",
   "engines": {
     "node": ">=22.12.0"
