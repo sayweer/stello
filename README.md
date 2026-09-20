@@ -11,10 +11,10 @@ They send an ordinary bank transfer; your contract is called with the money alre
 [![license](https://img.shields.io/badge/license-MIT-black)](LICENSE)
 [![network](https://img.shields.io/badge/network-Stellar%20testnet-black)](https://stellar.expert/explorer/testnet/contract/CAG2IZHZK6VLNW3ASXENFLCL6SN6KS72JMLNF4GO2ZIFV5WURN2BYFZV)
 
-[**Documentation**](https://stello-web.vercel.app/en) ·
+[**Documentation**](https://stello-web-rho.vercel.app/en) ·
 [**Live example**](https://stello-core-et2a.vercel.app) ·
-[**For coding agents**](https://stello-web.vercel.app/llms-full.txt) ·
-[**Türkçe**](https://stello-web.vercel.app/tr)
+[**For coding agents**](https://stello-web-rho.vercel.app/llms-full.txt) ·
+[**Türkçe**](https://stello-web-rho.vercel.app/tr)
 
 </div>
 
