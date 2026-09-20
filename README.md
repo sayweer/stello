@@ -86,14 +86,11 @@ pnpm e2e --stage full
 
 Bu komutlar testnet'te işlem yapar. Deploy sonrası SDK'yı yeniden paketle ve tüketen uygulamaları güncelle. `deployments/testnet.json` ile üretilen `packages/core/src/deployment.ts` aynı kaydı taşır. `deployments/example.json` örnek hedefi tanımlar.
 
-## npm ve GitHub yayını
+## Yayın
 
-1. `pnpm check`, `cargo test`, `pnpm sdk:pack` çalıştır; paketi ayrı uygulamada dene.
-2. Stello refaktörünü kendi reposunda commit/push et.
-3. npm hesabı ve paket adı/sürümünü doğrulayıp `packages/core` içinde `pnpm publish --access public` çalıştır.
-4. Ayrı uygulamada `pnpm add stello-sdk@0.1.0` ile `file:vendor/...` bağımlılığını değiştir.
-5. `stello-kampanya` projesini ayrı GitHub reposuna gönder ve deploy et.
-6. Stello sitesinde `NEXT_PUBLIC_CAMPAIGN_URL` ile demo bağlantısını tanımla; relay izin listesine uygulamanın origin'ini ekle.
+SDK npm'de [`stello-sdk@0.1.0`](https://www.npmjs.com/package/stello-sdk), örnek uygulama [canlı](https://stello-core-et2a.vercel.app). Yeni sürüm çıkarmadan önce `pnpm check` ve `cargo test` yeşil olmalı; sürüm yükseltme adımları sitedeki "Paket ve yayın" dokümanında (`/docs/publishing`).
+
+Siteyi barındırırken iki şey gerekir: kök dizin `web` (Next uygulaması orada; kökte `next` bağımlılığı olmadığı için barındırıcı aksi hâlde projeyi statik sanır) ve sunucu tarafında `LANDING_SECRET` ile `STELLO_ALLOWED_ORIGINS`. İzin listesinde uygulamaların origin'i yoksa tarayıcıdan relay dürtülemez ve ödemeler relay'in kendi turunu bekler.
 
 ## Mevcut sınırlar
 

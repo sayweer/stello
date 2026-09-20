@@ -3,7 +3,7 @@ import CodeBlock from "@/components/CodeBlock";
 import Curtain from "@/components/Curtain";
 import InstallBlock from "@/components/InstallBlock";
 import { depositSnippet } from "@/lib/snippets";
-import { deployment, docs, example } from "@/lib/site";
+import { deployment, docs, example, exampleUrl } from "@/lib/site";
 
 /**
  * Numbers a developer can check rather than take on faith: every one of these
@@ -216,9 +216,14 @@ export default function Home() {
               Hedefe ulaşamazsa katılımcısına parasını ve bonus payını geri veren bir kampanya
               uygulaması. Stello SDK’sını ayrı bir projeden, kurulu paket olarak kullanıyor.
             </p>
-            <Link className="button secondary" href="/docs/example">
-              Örnek uygulamayı incele <span aria-hidden="true">↗</span>
-            </Link>
+            <div className="actions">
+              <a className="button secondary" href={exampleUrl} target="_blank" rel="noreferrer">
+                Canlı uygulamayı aç <span aria-hidden="true">↗</span>
+              </a>
+              <Link className="text-link" href="/docs/example">
+                Nasıl entegre etti?
+              </Link>
+            </div>
           </div>
           <div className="example-receipt">
             <p className="eyebrow">STELLO KAMPANYA</p>

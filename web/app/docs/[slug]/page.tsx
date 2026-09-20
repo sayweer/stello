@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import CodeBlock from "@/components/CodeBlock";
-import { docs, deployment, example } from "@/lib/site";
+import { docs, deployment, example, exampleUrl } from "@/lib/site";
 import { contractSnippet, fullSnippet, routeSnippet } from "@/lib/snippets";
 
 /** Slugs rendered by this route. `agents` is absent: it has its own file. */
@@ -60,13 +60,13 @@ function Relay() { return <>
   <Link className="next-doc" href="/docs/example"><span>SIRADAKİ</span>Örnek uygulama ↗</Link>
 </>; }
 
-function Example() { const url = process.env.NEXT_PUBLIC_CAMPAIGN_URL; return <>
+function Example() { return <>
   <p className="intro">Stello Kampanya, SDK’nın ilk tüketicisi: hedef tutmazsa katılımcılarına taahhütlerini ve bonus paylarını geri veren bağımsız bir uygulama.</p>
   <div className="callout"><strong>İki ayrı proje</strong><p><code>stello/</code> SDK, router, relay ve bu siteyi içerir. <code>stello-kampanya/</code> kendi arayüzünü, kampanya kontratını ve iş kurallarını içerir.</p></div>
   <h2>Örnek projeyi çalıştır</h2><CodeBlock code={`cd stello-kampanya\npnpm install\npnpm dev`} /><p>Örnek, SDK’yı herkes gibi registry’den kurar: <code>package.json</code> içinde <code>stello-sdk</code> normal bir bağımlılık olarak durur. Komşu bir Stello klasörü gerekmez — katmanın gerçekten paket olarak tüketilebildiğinin kanıtı da budur.</p>
   <h2>Entegrasyonun bulunduğu yerler</h2><div className="table-scroll"><table><thead><tr><th>Dosya</th><th>Sorumluluk</th></tr></thead><tbody><tr><td><code>lib/campaign/config.ts</code></td><td>Uygulamanın rota ve kontrat adresi</td></tr><tr><td><code>lib/campaign/flows.ts</code></td><td>Stello istemcisine kampanya argümanı verir</td></tr><tr><td><code>lib/campaign/contracts.ts</code></td><td>Kampanya kontratını SDK yardımcılarıyla çağırır</td></tr><tr><td><code>contracts/campaign</code></td><td>Hedef, süre, bonus, katılım ve iade kuralları</td></tr></tbody></table></div>
   <h2>Kendi uygulamana uyarlamak</h2><p>Kampanyanın iş kurallarını taşımana gerek yok. Kendi <code>on_deposit</code> fonksiyonunu ekle, kendi rotanı kaydet ve frontend’den kendi argümanını gönder. Örnek uygulamanın ödeme akışı, senin kullanacağın SDK ile aynıdır.</p>
-  {url ? <a className="button primary" href={url} target="_blank" rel="noreferrer">Örnek uygulamayı aç ↗</a> : <p className="muted">Canlı uygulama URL’si henüz tanımlı değil. Ayrı GitHub deposu ve deploy tamamlandığında bu sayfaya bağlanacak.</p>}
+  <a className="button primary" href={exampleUrl} target="_blank" rel="noreferrer">Örnek uygulamayı aç ↗</a>
   <Link className="next-doc" href="/docs/publishing"><span>SIRADAKİ</span>Paket ve yayın ↗</Link>
 </>; }
 
