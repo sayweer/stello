@@ -115,6 +115,14 @@ attribution and the atomic dispatch are all real and verifiable on chain.
 
 The router compiles to **7 KB**, and the SDK has **two** dependencies.
 
+A full round trip, measured against the live anchor and testnet — `pnpm e2e --stage full`:
+
+```
+100 TRY  →  anchor  →  landing account (muxed, ticket 3)
+         →  router.dispatch  →  on_deposit  →  2.039609 USDC held by the contract
+         →  withdrawal        →  99.00 TRY back to the IBAN        65 seconds, end to end
+```
+
 ## Repository
 
 ```
