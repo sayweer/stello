@@ -1,10 +1,10 @@
 <!-- Stello: bank-transfer payments into a Soroban contract -->
 ## Stello
 
-This project uses [Stello](https://stello.dev) so people without a crypto wallet can pay into our
+This project uses [Stello](https://stello-web.vercel.app) so people without a crypto wallet can pay into our
 Soroban contract with an ordinary bank transfer.
 
-**Read https://stello.dev/llms-full.txt before changing payment code.**
+**Read https://stello-web.vercel.app/llms-full.txt before changing payment code.**
 
 Non-negotiable rules:
 

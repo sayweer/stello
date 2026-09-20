@@ -8,7 +8,7 @@ import { headers } from "next/headers";
 export async function siteOrigin(): Promise<string> {
   const list = await headers();
   const host = list.get("x-forwarded-host") ?? list.get("host");
-  if (!host) return "https://stello.dev";
+  if (!host) return "https://stello-web.vercel.app";
   const proto = list.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
   return `${proto}://${host}`;
 }

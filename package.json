@@ -15,7 +15,7 @@
     "sdk:pack": "pnpm --filter stello-sdk pack --out artifacts/stello-sdk-%v.tgz",
     "dev": "pnpm sdk:build && pnpm --filter @stello/web dev",
     "build": "pnpm --filter @stello/web build",
-    "check": "pnpm test && pnpm typecheck && pnpm build && pnpm agent:files https://stello.dev",
+    "check": "pnpm test && pnpm typecheck && pnpm build && pnpm agent:files https://stello-web.vercel.app",
     "agent:files": "node --import tsx scripts/write-agent-files.ts"
   },
   "dependencies": {

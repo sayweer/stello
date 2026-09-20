@@ -1,97 +1,207 @@
+<div align="center">
+
 # Stello
 
-**Bir havale, bir kontrat çağrısı.**
+**A bank transfer is a contract call.**
 
-Stello, banka havalesiyle Soroban kontratlarını kullanmak için bir TypeScript SDK, router kontratı ve relay sağlar. Kullanıcı IBAN ve referans kodu görür; uygulamanın `on_deposit(user, amount, arg)` fonksiyonu USDC aktarımıyla aynı transaction içinde çağrılır.
+Let people without a crypto wallet use your Soroban contract.
+They send an ordinary bank transfer; your contract is called with the money already in it.
 
-Şu an Stellar testnet ve Türk mock anchor kullanılır. Gerçek banka havalesi/KYC yoktur. SDK npm'de [`stello-sdk`](https://www.npmjs.com/package/stello-sdk) adıyla yayımlıdır.
+[![npm](https://img.shields.io/npm/v/stello-sdk?color=FDDA24&label=stello-sdk)](https://www.npmjs.com/package/stello-sdk)
+[![license](https://img.shields.io/badge/license-MIT-black)](LICENSE)
+[![network](https://img.shields.io/badge/network-Stellar%20testnet-black)](https://stellar.expert/explorer/testnet/contract/CAG2IZHZK6VLNW3ASXENFLCL6SN6KS72JMLNF4GO2ZIFV5WURN2BYFZV)
 
-## Projelerin sınırı
+[**Documentation**](https://stello-web.vercel.app/en) ·
+[**Live example**](https://stello-core-et2a.vercel.app) ·
+[**For coding agents**](https://stello-web.vercel.app/llms-full.txt) ·
+[**Türkçe**](https://stello-web.vercel.app/tr)
 
-| Bu repo: `stello` | Ayrı proje: `stello-kampanya` |
-| --- | --- |
-| `packages/core`: yayımlanabilir `stello-sdk` | SDK'yı paket olarak kuran Next.js uygulaması |
-| `contracts/router`: paylaşılan ödeme yönlendiricisi | Kendi `contracts/campaign` kontratı |
-| `contracts/example-target`: küçük kumbara örneği | Kampanya, bonus, taahhüt ve iade iş kuralları |
-| `web`: SDK tanıtımı, `/docs`, `/api/relay` | Kampanyanın arayüzü ve kullanıcı anahtarları |
-| `scripts`: Stello deploy, relay ve e2e işlemleri | Kendi deployment kaydı ve rota kimliği |
+</div>
 
-Stello SDK'sı kampanyayı bilmez. Entegre eden uygulama landing hesabının secret'ını tutmaz. Kampanyanın eski web kaynakları Git geçmişindedir; yerel ayrıştırma yedeği `.scratch/pre-separation/web` altındadır ve commitlenmez.
+---
 
-## Yerel çalışma
+## The problem
 
-Node.js **22.12+**, pnpm; kontratlar için Rust ve Stellar CLI gerekir.
+A Soroban contract can only be used by someone who already has a wallet, some XLM for fees,
+and a way to get money on chain. For most people in most places, that is three walls before
+the product even starts. The usual answer — "tell them to install a wallet" — is the reason
+so many good contracts have no users.
 
-```bash
-pnpm install
-pnpm dev
+Stello removes all three. Your user stays in the banking app they already have.
+
+## How it works
+
+```
+ banking app          anchor              landing account            your contract
+     │                  │                        │                        │
+     │──── TRY ────────▶│                        │                        │
+     │                  │──── USDC ─────────────▶│                        │
+     │                  │   to M(landing, id)    │                        │
+     │                  │                        │── router.dispatch ────▶│
+     │                  │                        │   transfer + call      │
+     │                  │                        │   in one transaction   │
 ```
 
-Tanıtım ve dokümantasyon: `http://localhost:3000`. Kök dev komutu önce SDK'yı derler. Web dev sunucusu kök `.env` dosyasını okur; relay için oradaki `LANDING_SECRET` kullanılır. Development modunda `http://localhost:3001` origin'ine varsayılan izin verilir. Hosting ortamında `LANDING_SECRET` ve `STELLO_ALLOWED_ORIGINS` açıkça tanımlanmalıdır.
+1. **A ticket is opened.** The SDK records the user, the target route and up to 64 bytes of
+   your own argument on the shared router.
+2. **The anchor returns payment details.** The user sees an IBAN and a reference code.
+3. **The payment lands.** It arrives at a [muxed address][muxed] whose id *is* the ticket id,
+   which is what ties an anonymous bank transfer to a specific pledge.
+4. **The router dispatches.** It moves the USDC to your contract and calls `on_deposit` in the
+   **same transaction** — so the money and the call either both happen or neither does.
 
-```bash
-pnpm check      # TS testleri, SDK tip kontrolü, SDK + web build
-cargo test      # Router ve example-target testleri
-pnpm sdk:pack   # artifacts/stello-sdk-0.1.0.tgz
+[muxed]: https://developers.stellar.org/docs/learn/encyclopedia/transactions-specialized/muxed-accounts
+
+## The whole integration
+
+**One function in your contract:**
+
+```rust
+pub fn on_deposit(env: Env, user: Address, amount: i128, arg: Bytes) -> bool {
+    let router: Address = env.storage().instance().get(&DataKey::Router).unwrap();
+    router.require_auth();          // mandatory — without it, deposits can be forged
+
+    // The tokens are already here. Apply your own rules.
+    credit(&env, &user, amount);
+    true
+}
 ```
 
-## Başka bir projeye kur
+**One route, registered once, permissionlessly:**
+
+```bash
+stellar contract invoke --id <ROUTER> --source-account you --network testnet \
+  -- register_route --owner <YOUR_G> --target <YOUR_C> --name "My app"
+```
+
+**One package in your app:**
 
 ```bash
 pnpm add stello-sdk @stellar/stellar-sdk
 ```
 
 ```ts
-import { Stello } from "stello-sdk";
+import { Stello, fromStroops } from "stello-sdk";
 
-const stello = new Stello({
-  route: 2, // mevcut testnet kumbara örneği; kendi uygulaman için rota kaydet
-  relayUrl: "http://localhost:3000/api/relay",
-});
+const stello = new Stello({ route: YOUR_ROUTE_ID });
 
 const payment = await stello.requestDeposit({
-  keypair, // uygulamanın sakladığı kullanıcı anahtarı
+  keypair,                       // the user key your app persists
   amountTry: "100",
-  arg: new Uint8Array([1]),
+  arg: new Uint8Array([1]),      // yours; the router never reads it
 });
-// payment.iban ve payment.reference kullanıcıya gösterilir.
-await stello.simulateBankTransfer(payment, "100"); // yalnız mock anchor
+// Show payment.iban and payment.reference to the user.
+
 const result = await stello.waitForDeposit({ handle: payment });
+console.log(fromStroops(result.amount), result.accepted);
 ```
 
-Tam rehber: web'deki `/docs/installation`, paket API'si: [packages/core/README.md](packages/core/README.md).
+That is the entire surface. No wallet, no chain concepts, and nothing about Stello in your
+user interface.
 
-Kendi kontratına `on_deposit` ekle; kayıtlı router için `require_auth()` çağır. Hedef kontratın aynı USDC token'ını kullanmalı. `register_route` ile aldığın id'yi istemciye ver. `arg` uygulamana aittir, en fazla 64 bayttır. `accepted: false` döndüren hedef iadeyi kendisi yapmalıdır.
+## Status
 
-## Relay
+Stellar **testnet**, against a **mock Turkish anchor**. Bank transfers and KYC are simulated;
+no real money moves. The contracts, the router's authorization tree, the muxed-address
+attribution and the atomic dispatch are all real and verifiable on chain.
 
-İki seçenek vardır:
+| | |
+| --- | --- |
+| Router | [`CAG2IZHZ…RN2BYFZV`](https://stellar.expert/explorer/testnet/contract/CAG2IZHZK6VLNW3ASXENFLCL6SN6KS72JMLNF4GO2ZIFV5WURN2BYFZV) |
+| Example target (route `2`) | [`CDF6WDCS…MHPP266UH`](https://stellar.expert/explorer/testnet/contract/CDF6WDCS3M36RN6ERREM4B5ZT74RL5SU3I2TLJ2JXB5DCODMHPP266UH) |
+| Landing account | [`GBWOY746…UELJYNTFL`](https://stellar.expert/explorer/testnet/account/GBWOY746OPO2GOADBVBZKDXZC6VAEYB5JGKGKWB7ETGEH6UUELJYNTFL) |
+| USDC (SAC) | `CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA` |
+| Anchor | `tr-mock-anchor.fly.dev` (SEP-1/10/12/6/38) |
 
-- Stello web sunucusunda `POST /api/relay`; SDK `relayUrl` ile çağırır.
-- Kök `.env` ile çalışan `pnpm relayer` sürekli döngüsü.
+The router compiles to **7 KB**, and the SDK has **two** dependencies.
 
-Sunucu işlevleri `stello-sdk/server` girişindedir. Landing key hiçbir zaman `NEXT_PUBLIC_` değişkeni, SDK paketi veya örnek uygulama içine girmez.
+## Repository
 
-Stello işletmecisi cross-origin uygulamaları `STELLO_ALLOWED_ORIGINS=https://app.example.com,https://other.example.com` ile tanımlar. Endpoint CORS preflight destekler ve aynı sunucu örneğindeki eşzamanlı taramaları birleştirir. Dağıtık eşzamanlılık için son kontrol router'ın ödeme referansıdır.
+```
+contracts/router           the shared payment router          (14 tests)
+contracts/example-target   the smallest possible integration   (4 tests)
+packages/core              stello-sdk, published to npm       (11 tests)
+web                        documentation site + /api/relay     (9 tests)
+scripts                    deploy, relay loop, end-to-end runs
+deployments                the single source of truth for addresses
+```
 
-## Deploy ve e2e
+The example application — [**Stello Campaign**](https://github.com/sayweer/stello-kampanya),
+a dominant-assurance campaign that refunds its backers with a share of the bonus when the
+goal is missed — lives in its own repository and installs `stello-sdk` from npm like anyone
+else would. That separation is the proof that this is a layer rather than one application.
+
+## Development
+
+Requires Node.js 22.12+, pnpm, and — for the contracts — Rust with the Stellar CLI.
 
 ```bash
-bash scripts/deploy.sh          # Yeni router deploy eder; config'i değiştirir
-bash scripts/deploy-example.sh  # Yeni örnek kontrat + rota oluşturur
-pnpm e2e --stage anchor
-pnpm e2e --stage chain
-pnpm e2e --stage full
+pnpm install
+pnpm dev            # docs site + relay on http://localhost:3000
+
+pnpm check          # tests, type check, production build
+cargo test          # 18 contract tests
+stellar contract build
 ```
 
-Bu komutlar testnet'te işlem yapar. Deploy sonrası SDK'yı yeniden paketle ve tüketen uygulamaları güncelle. `deployments/testnet.json` ile üretilen `packages/core/src/deployment.ts` aynı kaydı taşır. `deployments/example.json` örnek hedefi tanımlar.
+`pnpm dev` reads the repository root `.env`; the relay needs `LANDING_SECRET` there. See
+[`.env.example`](.env.example).
 
-## Yayın
+### Deploying the docs site
 
-SDK npm'de [`stello-sdk@0.1.0`](https://www.npmjs.com/package/stello-sdk), örnek uygulama [canlı](https://stello-core-et2a.vercel.app). Yeni sürüm çıkarmadan önce `pnpm check` ve `cargo test` yeşil olmalı; sürüm yükseltme adımları sitedeki "Paket ve yayın" dokümanında (`/docs/publishing`).
+The Next.js app is under `web/`, not at the repository root, so **set your host's root
+directory to `web`**. Otherwise the root `package.json` has no `next` dependency, the project
+is taken for a static site, and the build fails looking for a `public` directory.
 
-Siteyi barındırırken iki şey gerekir: kök dizin `web` (Next uygulaması orada; kökte `next` bağımlılığı olmadığı için barındırıcı aksi hâlde projeyi statik sanır) ve sunucu tarafında `LANDING_SECRET` ile `STELLO_ALLOWED_ORIGINS`. İzin listesinde uygulamaların origin'i yoksa tarayıcıdan relay dürtülemez ve ödemeler relay'in kendi turunu bekler.
+Set `LANDING_SECRET` and `STELLO_ALLOWED_ORIGINS` in the server environment. Without an
+integrating app's origin on that list, its browser cannot nudge the relay and payments wait
+for the relay's next pass.
 
-## Mevcut sınırlar
+### Against the live network
 
-Relay ve anchor güvenilen taraflardır. Relay son 50 ödemeyi tarar; kalıcı cursor/backfill henüz yoktur. RPC event saklama süresi, uzun süre bekleyen ödeme takibini sınırlar. Tarayıcı anahtarı demo düzeyindedir; kurtarma, passkey ve mainnet rezerv sponsorluğu tamamlanmamıştır. Genel ağ/anchor yapılandırması v0.1'de SDK deployment'ına bağlıdır.
+```bash
+bash scripts/deploy.sh          # deploys a new router and rewrites the deployment record
+bash scripts/deploy-example.sh  # deploys the example target and registers its route
+pnpm e2e --stage anchor|chain|full
+```
+
+These spend real testnet transactions. After a deploy, cut a new SDK version: the deployment
+record is compiled into the package, so consumers on an older version keep calling the old
+addresses.
+
+## Trust model
+
+Be precise about this, because it is the part people get wrong.
+
+- **The router is trustless.** The token transfer and the contract call are one transaction.
+  A payment reference can be dispatched only once, and if the target panics, everything —
+  the transfer and the record — is rolled back.
+- **The relay is trusted** for the seconds it holds a payment. It reads the amount and the
+  ticket id from Horizon and tells the router. It cannot pay twice or redirect money, but it
+  can decline to act.
+- **The anchor is trusted** with the fiat leg, as any on-ramp is.
+- **`accepted: false` does not mean a refund happened.** The target contract is responsible
+  for returning the money it refuses. The router will not do it for you.
+
+## Known limits
+
+The relay examines the last 50 payments per pass and has no persistent cursor or backfill, so
+a long outage needs manual attention. RPC event retention bounds how long a pending payment
+can be traced. The browser key is demo-grade: no recovery, no passkeys. Mainnet would need
+reserve and fee sponsorship, a real anchor and real KYC. Network and anchor configuration is
+baked into the package in v0.1 rather than being configurable.
+
+## Built with
+
+Soroban · SEP-1, SEP-10, SEP-12, SEP-6 and SEP-38 · muxed accounts · the Stellar Asset
+Contract · `@stellar/stellar-sdk`.
+
+## License
+
+MIT — see [LICENSE](LICENSE).
+
+<div align="center"><sub>
+
+Built by Seyit Ali Değirmen · Stellar Pro Hackathon, Istanbul, September 2026
+
+</sub></div>
